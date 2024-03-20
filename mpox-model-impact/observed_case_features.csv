@@ -1,0 +1,40 @@
+grp,estimate,city,metric,references
+16-29,0.265,Montréal,Panel A): Proportion of cumulative cases by age groups,https://publications.msss.gouv.qc.ca/msss/fichiers/flashvigie/FlashVigie_vol16_no4.pdf
+30-39,0.355,Montréal,Panel A): Proportion of cumulative cases by age groups,https://publications.msss.gouv.qc.ca/msss/fichiers/flashvigie/FlashVigie_vol16_no4.pdf
+40-49,0.25,Montréal,Panel A): Proportion of cumulative cases by age groups,https://publications.msss.gouv.qc.ca/msss/fichiers/flashvigie/FlashVigie_vol16_no4.pdf
+50-59,0.125,Montréal,Panel A): Proportion of cumulative cases by age groups,https://publications.msss.gouv.qc.ca/msss/fichiers/flashvigie/FlashVigie_vol16_no4.pdf
+60+,0.005,Montréal,Panel A): Proportion of cumulative cases by age groups,https://publications.msss.gouv.qc.ca/msss/fichiers/flashvigie/FlashVigie_vol16_no4.pdf
+16-29,0.234,Toronto,Panel A): Proportion of cumulative cases by age groups,https://www.publichealthontario.ca/-/media/Documents/M/2022/monkeypox-episummary.pdf?rev=ccdc118970104a4c9e634eb46e52839c&sc_lang=en
+30-39,0.417,Toronto,Panel A): Proportion of cumulative cases by age groups,https://www.publichealthontario.ca/-/media/Documents/M/2022/monkeypox-episummary.pdf?rev=ccdc118970104a4c9e634eb46e52839c&sc_lang=en
+40-49,0.243,Toronto,Panel A): Proportion of cumulative cases by age groups,https://www.publichealthontario.ca/-/media/Documents/M/2022/monkeypox-episummary.pdf?rev=ccdc118970104a4c9e634eb46e52839c&sc_lang=en
+50-59,0.081,Toronto,Panel A): Proportion of cumulative cases by age groups,https://www.publichealthontario.ca/-/media/Documents/M/2022/monkeypox-episummary.pdf?rev=ccdc118970104a4c9e634eb46e52839c&sc_lang=en
+60+,0.025,Toronto,Panel A): Proportion of cumulative cases by age groups,https://www.publichealthontario.ca/-/media/Documents/M/2022/monkeypox-episummary.pdf?rev=ccdc118970104a4c9e634eb46e52839c&sc_lang=en
+16-29,NA,Vancouver,Panel A): Proportion of cumulative cases by age groups,
+30-39,NA,Vancouver,Panel A): Proportion of cumulative cases by age groups,
+40-49,NA,Vancouver,Panel A): Proportion of cumulative cases by age groups,
+50-59,NA,Vancouver,Panel A): Proportion of cumulative cases by age groups,
+60+,NA,Vancouver,Panel A): Proportion of cumulative cases by age groups,
+16-29,0.215,Montréal,Panel B): Proportion of cumulative vaccination by age groups,https://publications.msss.gouv.qc.ca/msss/fichiers/flashvigie/FlashVigie_vol16_no4.pdf
+30-39,0.265,Montréal,Panel B): Proportion of cumulative vaccination by age groups,https://publications.msss.gouv.qc.ca/msss/fichiers/flashvigie/FlashVigie_vol16_no4.pdf
+40-49,0.2,Montréal,Panel B): Proportion of cumulative vaccination by age groups,https://publications.msss.gouv.qc.ca/msss/fichiers/flashvigie/FlashVigie_vol16_no4.pdf
+50-59,0.16,Montréal,Panel B): Proportion of cumulative vaccination by age groups,https://publications.msss.gouv.qc.ca/msss/fichiers/flashvigie/FlashVigie_vol16_no4.pdf
+60+,0.16,Montréal,Panel B): Proportion of cumulative vaccination by age groups,https://publications.msss.gouv.qc.ca/msss/fichiers/flashvigie/FlashVigie_vol16_no4.pdf
+16-29,0.221,Toronto,Panel B): Proportion of cumulative vaccination by age groups,https://www.publichealthontario.ca/-/media/Documents/M/2022/mpx-immunization-post-ontario-cases.pdf?rev=d5914e5a55a249d59a27e31c09a49305&la=fr
+30-39,0.334,Toronto,Panel B): Proportion of cumulative vaccination by age groups,https://www.publichealthontario.ca/-/media/Documents/M/2022/mpx-immunization-post-ontario-cases.pdf?rev=d5914e5a55a249d59a27e31c09a49305&la=fr
+40-49,0.182,Toronto,Panel B): Proportion of cumulative vaccination by age groups,https://www.publichealthontario.ca/-/media/Documents/M/2022/mpx-immunization-post-ontario-cases.pdf?rev=d5914e5a55a249d59a27e31c09a49305&la=fr
+50-59,0.1315,Toronto,Panel B): Proportion of cumulative vaccination by age groups,
+60+,0.1315,Toronto,Panel B): Proportion of cumulative vaccination by age groups,
+16-29,NA,Vancouver,Panel B): Proportion of cumulative vaccination by age groups,
+30-39,NA,Vancouver,Panel B): Proportion of cumulative vaccination by age groups,
+40-49,NA,Vancouver,Panel B): Proportion of cumulative vaccination by age groups,
+50-59,NA,Vancouver,Panel B): Proportion of cumulative vaccination by age groups,
+60+,NA,Vancouver,Panel B): Proportion of cumulative vaccination by age groups,
+Seronegative/Unknown,0.78,Montréal,Panel C): Proportion of cumulative cases by HIV-serostatus,https://academic.oup.com/cid/article/78/2/461/7285391#
+Seropositive,0.22,Montréal,Panel C): Proportion of cumulative cases by HIV-serostatus,https://academic.oup.com/cid/article/78/2/461/7285391#
+Seronegative/Unknown,NA,Toronto,Panel C): Proportion of cumulative cases by HIV-serostatus,
+Seropositive,NA,Toronto,Panel C): Proportion of cumulative cases by HIV-serostatus,
+Seronegative/Unknown,NA,Vancouver,Panel C): Proportion of cumulative cases by HIV-serostatus,
+Seropositive,NA,Vancouver,Panel C): Proportion of cumulative cases by HIV-serostatus,
+vaccine,23835,Montréal,Cumulative vaccination,https://www.acpjournals.org/doi/10.7326/M22-2699
+vaccine,35545,Toronto,Cumulative vaccination,https://www.publichealthontario.ca/-/media/Documents/M/2022/monkeypox-episummary.pdf?rev=ccdc118970104a4c9e634eb46e52839c&sc_lang=en
+vaccine,18216,Vancouver,Cumulative vaccination,http://www.bccdc.ca/Health-Info-Site/Documents/Monkeypox/Epidemiological_Summary/Mpox_Surveillance_20230109.pdf
