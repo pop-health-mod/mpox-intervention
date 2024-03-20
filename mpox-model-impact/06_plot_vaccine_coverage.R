@@ -17,8 +17,7 @@ data_incid <- data_incid %>%
                                           prov == "BC" ~ cumsum(first_doses) / N[["van"]])) %>% 
   ungroup() %>% 
   rename(city = city_name) %>% 
-  filter(date <= as.Date("2022-09-15"))
-data_incid <- subset(data_incid, time_conti < 150)
+  filter(date <= as.Date("2022-10-15"))
 
 p_vc <- ggplot(data_incid, aes(x = date, y = first_doses_coverage)) +
   geom_line(aes(col = city), linewidth = 0.5) +

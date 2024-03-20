@@ -23,7 +23,6 @@ prior_dens_fix <- function(theta) {
 #' @param VE_llk vaccine effectiveness to run the calibration (for sensitivity analysis)
 #' @param contact_prop_llk proportion contact traced and isolated to run the calibration (for sensitivity analysis)
 #' @param contact_dur_llk days it takes for contact tracing (for sensitivity analysis)
-#' @param standardized_vaccine_date_llk whether or not standardizing vaccination start dates across the cities (for sensitivity analysis)
 #' @return a value equals to the log posterior density
 #' @rdname llk_all
 #' @export 
@@ -32,8 +31,7 @@ llk_all <- function(theta,
                 cal_cpp,
                 VE_llk,
                 contact_prop_llk,
-                contact_dur_llk,
-                standardized_vaccine_date_llk) {
+                contact_dur_llk) {
   
   log_prior_fix <- prior_dens_fix(theta)
   
@@ -55,8 +53,7 @@ llk_all <- function(theta,
     # load model parameter of the selected cities
     load.params.fn(VE_llk, 
                    contact_prop_llk,
-                   contact_dur_llk,
-                   standardized_vaccine_date_llk)
+                   contact_dur_llk)
     
     # change parameters to be calibrated in the function input
     model_output <- fn_model(city = cal_city,
@@ -214,8 +211,7 @@ simul_fun_all <- function(cal_type,
                     cal_cpp = cal_cpp,
                     VE_sim,
                     contact_prop_sim,
-                    contact_dur_sim,
-                    standardized_vaccine_date_sim)}
+                    contact_dur_sim)}
         )
       )
     } else {
@@ -230,8 +226,7 @@ simul_fun_all <- function(cal_type,
             cal_cpp = cal_cpp,
             VE_sim,
             contact_prop_sim,
-            contact_dur_sim,
-            standardized_vaccine_date_sim)}
+            contact_dur_sim)}
       parallel::stopCluster(cl)
     }
     

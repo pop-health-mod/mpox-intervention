@@ -6,7 +6,8 @@ library(tidyverse)
 run_cpp <- T # if run model in cpp or not
 cal_cities <- c("mtl", "trt", "van")
 # cal_analysis <- c("main", "contact_15", "contact_10", "VE_lb", "VE_ub", "standardized_vaccine_date")
-cal_analysis <- "main"
+# cal_analysis <- "main"
+cal_analysis <- "standardized_vaccine_date"
 
 for(analysis in cal_analysis){
   
@@ -38,8 +39,7 @@ for(analysis in cal_analysis){
     cal_cpp = run_cpp,
     VE_llk = VE_analysis,
     contact_prop_llk = contact_prop_analysis,
-    contact_dur_llk = contact_dur_analysis,
-    standardized_vaccine_date_llk = standardized_vaccine_date_analysis)
+    contact_dur_llk = contact_dur_analysis)
   
   # Nelder-Mead better to get good starting values
   opt_nelder_mead <- optim(theta0, 
@@ -49,7 +49,6 @@ for(analysis in cal_analysis){
                          VE_llk = VE_analysis,
                          contact_prop_llk = contact_prop_analysis,
                          contact_dur_llk = contact_dur_analysis,
-                         standardized_vaccine_date_llk = standardized_vaccine_date_analysis,
                          method = "Nelder-Mead", 
                          control = list(fnscale = - 1, trace = 0, maxit = 250), 
                          hessian = FALSE)
@@ -62,7 +61,6 @@ for(analysis in cal_analysis){
              VE_llk = VE_analysis,
              contact_prop_llk = contact_prop_analysis,
              contact_dur_llk = contact_dur_analysis,
-             standardized_vaccine_date_llk = standardized_vaccine_date_analysis,
              method = "BFGS", 
              control = list(fnscale = -1, trace = 4, REPORT = 1, maxit = 250), 
              hessian = TRUE)
