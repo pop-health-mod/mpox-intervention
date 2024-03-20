@@ -1,0 +1,74 @@
+---
+title: "Parameter Meta-Analysis"
+author: "Fanyu Xiu"
+output: html_document
+---
+## library and datasets
+```{r setup, include = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(metafor)
+VE <- read_csv("./data-meta-analysis/meta-analysis-table-ve1.csv") # one-dose VE
+VE2 <- read_csv("./data-meta-analysis/meta-analysis-table-ve2.csv") # two-dose VE
+```
+
+## data cleaning
+```{r}
+VE$logor <- log(1 - VE$ve)
+VE$logor_cill <- log(1 - VE$cill)
+VE$logor_ciul <- log(1 - VE$ciul)
+VE$logse <- (VE$logor_ciul - VE$logor_cill) / (2 * qnorm(0.975))
+
+VE2$logor <- log(1 - VE2$ve)
+VE2$logor_cill <- log(1 - VE2$cill)
+VE2$logor_ciul <- log(1 - VE2$ciul)
+VE2$logse <- (VE2$logor_ciul - VE2$logor_cill) / (2 * qnorm(0.975))
+```
+
+## forest plots for vaccine effectiveness
+```{r}
+VEres <- rma(yi = logor, sei = logse, method = "FE", data = VE)
+VEres2 <- rma(yi = logor, sei = logse, method = "FE", data = VE2)
+
+vetransf <- function(x){
+  100 * (1 - exp(x))
+}
+### plot follows the estimates reported by the authors
+#### 1 dose
+png("./meta-analysis-figures/ve1.png", width = 8, height = 4, units = "in", res = 300)
+forest(VE$logor, 
+       ci.lb = VE$logor_cill, 
+       ci.ub = VE$logor_ciul, 
+       transf = vetransf, 
+       rows = (nrow(VE) + 1):2, 
+       ylim = c(0.5, 11),
+       header = c("Author(s), Year","VE [95% CI]"),
+       xlab = "Vaccine Effectiveness (VE)",
+       slab = paste(VE$trialname, VE$year, sep = ", "),
+       cex.main = 1,
+       main = "Effectiveness of one dose of mpox vaccine (VE) across 7 studies")
+addpoly(VEres, 
+        row = 1, 
+        transf = vetransf)
+abline(h = 1.5)
+dev.off()
+#### 2-dose
+png("./meta-analysis-figures/ve2.png", width = 8, height = 4, units = "in", res = 300)
+forest(VE2$logor,
+       ci.lb = VE2$logor_cill, 
+       ci.ub = VE2$logor_ciul, 
+       transf = vetransf, 
+       rows = (nrow(VE2) + 1):2, 
+       ylim = c(0.5, 7),
+       header = c("Author(s), Year","VE [95% CI]"),
+       xlab = "Vaccine Effectiveness (VE)",
+       slab = paste(VE2$trialname, VE2$year, sep = ", "),
+       cex.main = 1.2,
+       main = "Effectiveness of two doses of mpox vaccine (VE) across 3 studies",
+       refline = NULL)
+addpoly(VEres2, 
+        row = 1, 
+        transf = vetransf)
+abline(h = 1.5)
+dev.off()
+```
