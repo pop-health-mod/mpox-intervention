@@ -1,0 +1,9 @@
+## include Boost headers
+PKG_CXXFLAGS += -I/opt/homebrew/opt/boost/include
+
+## link against Boost libraries
+PKG_LIBS += -L//opt/homebrew/opt/boost/lib -lboost_filesystem -lboost_system
+
+## other flags, if needed
+PKG_CXXFLAGS += -std=c++17 -D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION
+PKG_LIBS += -lm

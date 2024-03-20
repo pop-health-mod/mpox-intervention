@@ -1,0 +1,27 @@
+Package: MpoxModelPack
+Title: Compartmental Model for Mpox Transmission among Men Who Have Sex with Men in Canada
+Version: 0.0.0.9000
+Authors@R: 
+    c(person("Fanyu", "Xiu", , "vanessa.xiu@mail.mcgill.ca", role = c("aut", "cre")),
+      person("Carla", "Doyle", , "carla.doyle@mail.mcgill.ca", role = "ctb"),
+      person("Mathieu", "Maheu-Giroux", ,"mathieu.maheu-giroux@mcgill.ca", role = "ctb"),
+      person("Jorge Luis", "Flores Anato", ,"jorge.l.flores@mail.mcgill.ca", role = "ctb"))
+Description: The goal of MpoxModelPack is to build a dynamic compartmental model that retrospectively assesses the impact of change in partner numbers, contact tracing, and vaccination, among gay, bisexual, and other men who have sex with men (GBM) during the 2022-2023 mpox outbreaks in major Canadian cities.
+License: GPL (>= 2)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Imports:
+    Rcpp (>= 1.0.11),
+    dplyr,
+    doParallel,
+    foreach,
+    mvtnorm,
+    Matrix
+LinkingTo: Rcpp,
+           BH
+Config/testthat/edition: 3
+Depends: 
+    R (>= 2.10)
+LazyData: true
+VignetteBuilder: knitr

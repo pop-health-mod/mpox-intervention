@@ -1,0 +1,42 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# MpoxModelPack
+
+<!-- badges: start -->
+[![Travis build status](https://travis-ci.com/vanessaxiu/mpox-model-package.svg?branch=main)](https://travis-ci.com/vanessaxiu/mpox-model-package)
+[![Codecov test coverage](https://codecov.io/gh/vanessaxiu/mpox-model-package/branch/main/graph/badge.svg)](https://app.codecov.io/gh/vanessaxiu/mpox-model-package?branch=main)
+<!-- badges: end -->
+
+The goal of MpoxModelPack is to build a deterministic compartmental model that retrospectively assesses the impact of behavourial changes and non-pharmaceutical interventions, e.g. contact tracing, vaccinations.
+
+## Installation
+
+You can install the development version of MpoxModelPack from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("vanessaxiu/MpoxModelPack")
+```
+
+## Example
+
+This is a basic example which loads contact rates and proportion in all three cities:
+
+```{r}
+library(MpoxModelPack)
+init.pop.fn()
+```
+
