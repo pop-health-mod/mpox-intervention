@@ -119,21 +119,7 @@ load.params.fn <- function(VE = 0.5149,
     # and contact rate (used to estimate force of infection, lambda)
     pars$N[[city]] <- sum(pop_dat[[city]]$n_pop) 
     pars$c_ash[[city]] <- pop_dat[[city]]$c_ash
-    
-    # contact rate and population size for each sexual activity group (used to estimate the proportionate mixing matrix)
-    for(s in pars$names_sa_cats){
-      pars$N_s[[city]][s] <- sum(pop_dat[[city]]$n_pop[, s, ])
-      pars$c_s[[city]][s] <- sum(pars$c_ash[[city]][, s, ] * (pop_dat[[city]]$n_pop[, s, ] / pars$N_s[[city]][s])) }
-    
     pars$N_ash[[city]] <- pop_dat[[city]]$n_pop
-    # size for each age stratum
-    pars$N_a[[city]] <- vector()
-    for(a in pars$names_age_cats){
-    pars$N_a[[city]][a] <- sum(pop_dat[[city]]$n_pop[a, , ])}
-    # size for each hiv stratum
-    pars$N_h[[city]] <- vector()
-    for(h in pars$names_hiv_cats){
-      pars$N_h[[city]][h] <- sum(pop_dat[[city]]$n_pop[, , h])}
     
     # calculate the initial prevalence
     not_S_comp_names <- pars$names_comp[pars$names_comp != "S"]
@@ -145,15 +131,6 @@ load.params.fn <- function(VE = 0.5149,
     # S compartment initial population
     init_prev[[city]][["S"]] <- pop_dat[[city]]$n_pop - init_prev[[city]][["I"]] - init_prev[[city]][["E"]]
     
-    # g[s]: probability a partner chosen according to proportionate mixing will be
-    # a member of the s sexual activity group (used to estimate the proportionate mixing matrix)
-    for(s in pars$names_sa_cats){
-      # numerator is the number of partnerships from this specific sexual activity group in this city
-      numerator <- pars$c_s[[city]][s] * pars$N_s[[city]][s] 
-      # denominator is the number of total partnerships in this city
-      denumerator <- sum(pars$c_s[[city]] * pars$N_s[[city]]) 
-      pars$g[[city]][s] <- numerator / denumerator
-    }
     # check total number of people stay the same after partitioning into strata
     if(pars$N[[city]] != sum(pop_dat[[city]]$n_pop)){
       stop("Error: total number of people doesn't stay the same after partitioning into strata")
@@ -171,23 +148,6 @@ load.params.fn <- function(VE = 0.5149,
   
   # report delay
   pars$report_delay <- 1/2
-
-  # for hiv
-  ## seroneg = seronegative or unknown
-  pars$H_matrix <- data.frame(part_seroneg = c(0.924, 0.660),
-                              part_seropos = c(0.076, 0.340))
-  # pars$H_matrix <- diag(2) # debug
-  row.names(pars$H_matrix) <- c("0", "1")
-  colnames(pars$H_matrix) <- c("0", "1")
-  pars$H_matrix <- as.matrix(pars$H_matrix)
-
-  # for sexual activity
-  for(city in CITIES){
-    if(is.null(pop_dat[[city]])){next} # if didn't select the city, then skip
-    pars$S_matrix_prop[[city]] <- matrix(data = rep(pars$g[[city]], each = pars$n_sa_cats),
-                                         nrow = pars$n_sa_cats,
-                                         dimnames = list(pars$names_sa_cats, pars$names_sa_cats)) }
-  pars$S_matrix_assor <- diag(nrow = pars$n_sa_cats)
   
   # assign all to the global environment
   invisible(lapply( 1:length( pars ), function( x )
