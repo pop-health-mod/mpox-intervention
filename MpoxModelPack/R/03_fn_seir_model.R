@@ -27,11 +27,13 @@
                        VACCINATING = 1,
                        cpp 
                        ){ 
-    if(is.null(S_matrix_prop[[city]])){
-      stop(paste(city, "data wasn't loaded"))
-    }
+    # TODO: [JK] fix below for revised mixing
+    # if(is.null(S_matrix_prop[[city]])){
+    #   stop(paste(city, "data wasn't loaded"))
+    # }
       
     ## make city-specific parameters
+    # TODO: [JK] these data type headings don't match anymore
     # int
     days_imported_city <- days_imported[city]
     days_RR_city <- days_RR[city]
@@ -43,23 +45,26 @@
     N_city <- N[[city]]
     
     # NumericVector
-    N_s_city <- N_s[[city]]
-    c_s_city <- c_s[[city]]
-    N_a_city <- N_a[[city]]
-    N_h_city <- N_h[[city]]
     N_ash_city <- N_ash[[city]]
     c_ash_city <- c_ash[[city]]
     psi_t_city <- psi_t[[city]]
-    g_city <- g[[city]]
+    N_s_city <- apply(N_ash_city,2,sum)
     upsilon_city <- upsilon[[city]]
     vartheta_city <- vartheta[[city]]
     
     # NumericMatrix
-    A_matrix_city <- A_matrix[[city]]
-    S_matrix_prop_city <- S_matrix_prop[[city]]
+    mix_odds_ah_city <- gen.mix.ah.odds(mix_odds[[city]])
+    mix_odds_s_city  <- gen.mix.s.odds(omega_city)
     
     # array
     init_prev_city <- init_prev[[city]]
+    mix_ah4p <- array(NA,dim=c(5,2,5,2), # mixing probability by {a,h,ap,hp}
+      dimnames=list(names_age_cats,names_hiv_cats,names_age_cats,names_hiv_cats))
+    mix_ash6c <- array(NA,dim=c(5,15,2,5,15,2), # mixing *contacts per-person* by {a,s,h,ap,sp,hp}
+      dimnames=list(names_age_cats,names_sa_cats,names_hiv_cats,names_age_cats,names_sa_cats,names_hiv_cats))
+
+    # pre-compute relative contact rates (array)
+    RR_ash_city = ifelse(c_ash_city > (7/180), RR_H_city, RR_L_city)
     
     ## import cases as per fraction of only certain age groups (based on case data)
     and <- which(names_age_cats %in% c("30-39"))
@@ -77,6 +82,7 @@
     init_prev_city[["S"]] <- N_ash_city - init_prev_city[["I"]] - init_prev_city[["E"]]
     
  if(cpp){
+   # TODO: [JK] revised mixing not implemented in cpp yet
    # if code in cpp, convert all arrays into vector/matrix
    c_ash_city <- as.data.frame.table(c_ash_city)
    colnames(c_ash_city) <- c("age", "sa", "hiv", "c_ash")
@@ -146,17 +152,6 @@
                   end_city,
                   by = ddt)
       
-      ## initial value for time-varying parameters
-      ### city's number of people belonging to each sexual activity group at time = 0 (iteration = 1, a vector)
-      N_t_s <- list()
-      N_t_s[[1]] <- N_s_city
-      ### city's probability of having contact to a sexual activity group at time = 0 (iteration = 1, a vector)
-      g_t_s <- list()
-      g_t_s[[1]] <- g_city
-      ### city's matrix S at time = 0 (iteration = 1)
-      S_matrix_t <- list()
-      S_matrix_t[[1]] <- (1 - omega_city) * S_matrix_prop_city + omega_city * S_matrix_assor 
-      
       ## output matrix dimension names
       strata_name = list(names_comp,
                        paste0("iter", 1:niter_city), 
@@ -195,58 +190,37 @@
       upsilon_t <- ifelse(TRACING,
                           upsilon_city[day_index + 1],
                           0)
-      # compute the time-varying sexual activity mixing matrix
-      N_t_s[[t]] <- vector()
-      g_t_s[[t]] <- vector()
 
-      for(s in names_sa_cats){
-        ### number of participants who are mixing in each sexual activity group at iteration t (N_t_s, a vector)
-        ### minus people in J since they are isolated so unable to mix with others
-        N_t_s[[t]][s] <- N_t_s[[1]][s] - sum(X["J", t - 1, , s, ])
-      }
-      
-      ### compute g at time t
-      for(s in names_sa_cats){
-        g_t_s[[t]][s] <- c_s_city[s] * N_t_s[[t]][s] / sum(c_s_city * N_t_s[[t]])}
-      ### use g at time t to construct the proportionate mixing matrix at time t
-      S_matrix_prop_t <- matrix(rep(g_t_s[[t]], each = n_sa_cats),
-                                  nrow = n_sa_cats,
-                                  dimnames = list(names_sa_cats, names_sa_cats))
-     
-      if(any(rowSums(S_matrix_prop_t) < 0.99) | any(rowSums(S_matrix_prop_t) > 1.01)){
-        print("proportionate mixing matrix row sum not equal to 1")
-        return(list(city = city,
-                    iteration = t,
-                    g_t_s,
-                    N_t_s,
-                    S_matrix_prop_t = S_matrix_prop_t))
-        break}
-      
-      S_matrix_t[[t]] <- (1 - omega_city) * S_matrix_prop_t + omega_city * S_matrix_assor
-      
-      ### calculate lambda_t_ash through looping        
-      for(a in names_age_cats){
-          for(s in names_sa_cats){
-            for(h in names_hiv_cats){
-              
-              summation_t_ash <- 0
-              
-              for(ap in names_age_cats){ 
-                for(sp in names_sa_cats){
-                  for(hp in names_hiv_cats){
-                    #### probability part
-                    p_t_ash_apsphp <- as.numeric(A_matrix_city[a, ap]) * as.numeric(S_matrix_t[[t]][s, sp]) * as.numeric(H_matrix[h, hp])
-                    #### prevalence part
-                    prev_t_ash_apsphp <- X["I", t - 1, ap, sp, hp] / (N_ash_city[ap, sp, hp] - X["J", t - 1, ap, sp, hp])         
-                    summation_t_ash <- summation_t_ash + p_t_ash_apsphp * prev_t_ash_apsphp
-                  }}}
-      # if(t < 5){print(paste(t, a, s, h, summation_t_ash))}
-      RR_t <- ifelse(c_ash_city[a, s, h] > 7 / 180 & day_index >= days_imported[city] & (day_index <= days_imported[city] + days_RR[city]),
-                     RR_H_city, 
-                     ifelse(day_index >= days_imported[city] & (day_index <= days_imported[city] + days_RR[city]),
-                            RR_L_city,
-                            1))
-      lambda_t_ash <- c_ash_city[a, s, h] * bbeta_city * summation_t_ash * RR_t
+      # contact relative rates
+      c_ash_city_t <- c_ash_city * ifelse(
+        day_index >= days_imported[city] &
+        day_index <= days_imported[city] + days_RR[city],
+        RR_ash_city, 1)
+
+      # compute the time-varying mixing matrix
+      n_ash_t <- N_ash_city - X["J",t-1,,,]   # non-isolating pop by {a,s,h}
+      x_ash_t <- n_ash_t * c_ash_city_t       # total contacts by {a,s,h}
+      x_ah_t  <- c(apply(x_ash_t,c(1,3),sum)) # total contacts by {a,h} only
+      mix_ah2_rand <- outer(x_ah_t, x_ah_t) / sum(x_ah_t)   # random mixing by {a,h}
+      mix_ah2 <- apply.mix.odds(mix_ah2_rand, mix_odds_ah_city) # apply preferences by {a,h}
+      mix_ah4p[,,,] <- mix_ah2 / rowSums(mix_ah2) # make probability & reshape (10,10) -> (5,2,5,2)
+      for (a in names_age_cats){        # self age
+        for (ap in names_age_cats){     # ptr  age
+          for (h in names_hiv_cats){    # self hiv
+            for (hp in names_hiv_cats){ # ptr  hiv
+              x_s  <- x_ash_t[a,  ,h ] * mix_ah4p[a, h, ap,hp] # total contacts by {s} among {a,h}
+              x_sp <- x_ash_t[ap, ,hp] * mix_ah4p[ap,hp,a, h ] # total contacts by {sp} among {ap,hp}
+              mix_s2_rand <- outer(x_s, x_sp) / c(.5*sum(x_s)+.5*sum(x_sp)) # random mixing by {s,sp}
+              mix_ash6c[a,,h,ap,,hp] <- apply.mix.odds(mix_s2_rand, mix_odds_s_city) / n_ash_t[a,,h] # contacts * mixing per-person
+      }}}}
+
+      ### calculate lambda_t_ash
+      for (a in names_age_cats){
+        for (s in names_sa_cats){
+          for (h in names_hiv_cats){
+            prev_apsphp = X["I",t-1,,,] / n_ash_t
+            lambda_t_ash <- bbeta_city * sum(mix_ash6c[a,s,h,,,] * prev_apsphp)
+
       # disease natural history compartments
       X["S", t, a, s, h] <- X["S", t - 1, a, s, h] - ddt * (lambda_t_ash + psi_t * vartheta_city[a] / sum(X["S", t - 1, a, , ])) * X["S", t - 1, a, s, h] 
       X["V", t, a, s, h] <- X["V", t - 1, a, s, h] + ddt * (psi_t * vartheta_city[a] * X["S", t - 1, a, s, h] / sum(X["S", t - 1, a, , ]) - iota * lambda_t_ash * X["V", t - 1, a, s, h])
@@ -306,3 +280,27 @@
       
  } ### for else (modeling with R)
 } ### for the model function
+
+gen.mix.s.odds = function(omega,sd=2.5){
+  OR = omega*dnorm(abs(outer(1:15,1:15,`-`)),sd=sd)*sd
+  return(OR) }
+gen.mix.ah.odds = function(ors){
+  OR5 = matrix(0,5,5) # age
+  OR5[upper.tri(OR5,TRUE)] = ors[2:16]
+  OR5 = OR5 + t(OR5) - diag(diag(OR5))
+  OR = matrix(0,10,10) # age:hiv
+  OR[1: 5,1: 5] = OR5 + ors[1]
+  OR[6:10,1: 5] = OR5
+  OR[1: 5,6:10] = OR5
+  OR[6:10,6:10] = OR5 + ors[1]
+  return(OR) }
+apply.mix.odds = function(M0,OR,tol=1e-12){
+  M0 = M0 + tol    # avoid NaN issues
+  m1 = rowSums(M0) # target row margin
+  m2 = colSums(M0) # target col margin
+  M = M0 * exp(OR) # apply odds of mixing
+  for (i in 1:100){ # iterative proportional fitting: recover target margins
+    r1 = m1/rowSums(M); M = sweep(M,1,r1,`*`)
+    r2 = m2/colSums(M); M = sweep(M,2,r2,`*`)
+    if (all(abs(r1-1) < tol & abs(r2-1) < tol)){ break } } # close enough
+  return(M) }
