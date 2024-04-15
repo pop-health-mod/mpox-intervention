@@ -26,11 +26,13 @@
 "contact_rate_prop"
 
 
+#' TODO: [JK] update this
 #' Age mixing matrix based on Milwid et al, 2022 and the Engage Cohort Study age distribution (2022)
 #'
 #' @description Probability of sexual partnership formation between gay, bisexual, and other men who have sex with men belonging to different age groups.
 #' @format The list has 3 sublists (for Montreal, Toronto, and Vancouver), each contains a 5*5 matrix.
-"A_matrix"
+# "A_matrix"
+'mix_odds'
 
 
 #' Daily confirmed mpox cases in Montréal, Toronto, and Vancouver (May-Oct 2022.
