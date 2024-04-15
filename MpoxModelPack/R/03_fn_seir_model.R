@@ -1,5 +1,5 @@
   #' @title fn_model
-  #' @author: Fanyu Xiu, Carla Doyle
+  #' @author: Fanyu Xiu, Carla Doyle, Jesse Knight
   #' @description Loads the model function 
   #' @param city model one city at a time: "mtl" = Montreal, "trt" = Toronto, "van" = Vancouver
   #' @param import_cases_city number of imported cases
@@ -294,13 +294,7 @@ gen.mix.ah.odds = function(ors){
   OR[1: 5,6:10] = OR5
   OR[6:10,6:10] = OR5 + ors[1]
   return(OR) }
+sourceCpp('src/ipf.cpp')
 apply.mix.odds = function(M0,OR,tol=1e-12){
-  M0 = M0 + tol    # avoid NaN issues
-  m1 = rowSums(M0) # target row margin
-  m2 = colSums(M0) # target col margin
-  M = M0 * exp(OR) # apply odds of mixing
-  for (i in 1:100){ # iterative proportional fitting: recover target margins
-    r1 = m1/rowSums(M); M = sweep(M,1,r1,`*`)
-    r2 = m2/colSums(M); M = sweep(M,2,r2,`*`)
-    if (all(abs(r1-1) < tol & abs(r2-1) < tol)){ break } } # close enough
-  return(M) }
+  M0 = M0 + tol # fix NaN issues
+  M <- ipf_cpp(M0 * exp(OR), rowSums(M0), colSums(M0)) }
