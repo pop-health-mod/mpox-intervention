@@ -10,7 +10,7 @@
 #' @examples 
 #' \dontrun{
 #' if(interactive()){
-#'  load.params.fn(); H_matrix
+#'  load.params.fn(); mix_odds_ah
 #'  }
 #' }
 #' @seealso 
@@ -64,7 +64,7 @@ load.params.fn <- function(VE = 0.5149,
   pars$days_imported <- vector()
   pars$days_imported["mtl"] <- 21
   pars$days_imported["trt"] <- 21
-  pars$days_imported["van"] <- 10
+  pars$days_imported["van"] <- 14
   
   # days between the first reported cases and mass PrEP vaccination
   pars$days_RR <- vector() 
@@ -130,6 +130,17 @@ load.params.fn <- function(VE = 0.5149,
     
     # S compartment initial population
     init_prev[[city]][["S"]] <- pop_dat[[city]]$n_pop - init_prev[[city]][["I"]] - init_prev[[city]][["E"]]
+    
+    # age-hiv odds, unique to each city
+    OR5 = matrix(0, pars$n_age_cats, pars$n_age_cats) # age
+    OR5[upper.tri(OR5,TRUE)] = mix_odds[[city]][2:16]
+    OR5 = OR5 + t(OR5) - diag(diag(OR5))
+    OR = matrix(0, pars$n_age_cats * pars$n_hiv_cats, pars$n_age_cats * pars$n_hiv_cats) # age:hiv
+    OR[1: 5, 1: 5] = OR5 + mix_odds[[city]][1]
+    OR[6:10, 1: 5] = OR5
+    OR[1: 5, 6:10] = OR5
+    OR[6:10, 6:10] = OR5 + mix_odds[[city]][1]
+    pars$mix_odds_ah[[city]] <- OR
     
     # check total number of people stay the same after partitioning into strata
     if(pars$N[[city]] != sum(pop_dat[[city]]$n_pop)){

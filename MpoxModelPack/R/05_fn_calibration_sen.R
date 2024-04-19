@@ -194,7 +194,7 @@ simul_fun_all_sen <- function(cal_type,
       cl <- parallel::makeCluster(parallel::detectCores()) # use all cores
       doParallel::registerDoParallel(cl)
       parallel::clusterCall(cl, function() library(magrittr))
-      parallel::clusterExport(cl, c("contact_rate_prop", "case_data", "A_matrix", "llk_all_sen", "prior_dens_fix_sen", "init.pop.fn", "load.params.fn", "fn_model"))
+      parallel::clusterExport(cl, c("contact_rate_prop", "case_data", "mix_odds", "llk_all_sen", "prior_dens_fix_sen", "init.pop.fn", "load.params.fn", "fn_model"))
       loglikelihood_sir <- foreach::foreach(i = 1:nrow(par_sir), .combine = "c") %dopar% {
         par_sir_i <- par_sir[i, ]
         llk_all_sen(theta = par_sir_i,

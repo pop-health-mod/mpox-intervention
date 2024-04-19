@@ -6,8 +6,8 @@ library(tidyverse)
 run_cpp <- T # if run model in cpp or not
 cal_cities <- c("mtl", "trt", "van")
 # cal_analysis <- c("main", "contact_15", "contact_10", "VE_lb", "VE_ub", "standardized_vaccine_date")
-# cal_analysis <- "main"
-cal_analysis <- "standardized_vaccine_date"
+cal_analysis <- "main"
+# cal_analysis <- "standardized_vaccine_date"
 
 for(analysis in cal_analysis){
   
@@ -28,7 +28,7 @@ for(analysis in cal_analysis){
   theta0 <- vector()
   theta0[1:3] <- median(rnorm(10000, mean = qlogis(0.5), sd = 0.5))
   theta0[4] <- median(rnorm(10000, mean = qlogis(0.87), sd = 1))
-  theta0[5] <- median(rnorm(10000, mean = qlogis(0.5), sd = 1))
+  theta0[5] <- median(rnorm(10000, mean = log(5), sd = 1))
   theta0[6] <- median(rnorm(10000, mean = qlogis(0.67 / 0.80), sd = 5))
   theta0[7] <- median(rnorm(10000, mean = qlogis((0.80 - 0.47) / (1 - 0.47)), sd = 1.5))
   theta0[8] <- median(rnorm(10000, mean = qlogis((5 - 3) / (15 - 3)), sd = 1))
@@ -80,7 +80,7 @@ for(analysis in cal_analysis){
                                 "duration infectiousness (1/gamma1)"),
                       value = round(c(imported_low + plogis(theta[index_city]) * (imported_upp - imported_low), 
                                       plogis(theta[4]),
-                                      plogis(theta[5]), 
+                                      exp(theta[5]), 
                                       (0.7 + plogis(theta[6]) * (1 - 0.7)) * (0.47 + plogis(theta[7]) * (1 - 0.47)), 
                                       0.47 + plogis(theta[7]) * (1 - 0.47), 
                                       3 + plogis(theta[8]) * (15 - 3)),

@@ -31,7 +31,6 @@
 #'
 #' @description Probability of sexual partnership formation between gay, bisexual, and other men who have sex with men belonging to different age groups.
 #' @format The list has 3 sublists (for Montreal, Toronto, and Vancouver), each contains a 5*5 matrix.
-# "A_matrix"
 'mix_odds'
 
 
