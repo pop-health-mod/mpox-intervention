@@ -5,9 +5,8 @@ library(tidyverse)
 
 run_cpp <- T # if run model in cpp or not
 cal_cities <- c("mtl", "trt", "van")
-# cal_analysis <- c("main", "contact_15", "contact_10", "VE_lb", "VE_ub", "standardized_vaccine_date")
-cal_analysis <- "main"
-# cal_analysis <- "standardized_vaccine_date"
+cal_analysis <- c("contact_10", "standardized_vaccine_date", "VE_lb", "VE_ub")
+# cal_analysis <- c("main","contact_15")
 
 for(analysis in cal_analysis){
   
@@ -15,7 +14,7 @@ for(analysis in cal_analysis){
   
   print(analysis)
   
-  VE_analysis <- ifelse(analysis == "VE_lb", 0.4323, ifelse(analysis == "VE_ub", 0.5855, 0.5149))
+  VE_analysis <- ifelse(analysis == "VE_lb", 0.358, ifelse(analysis == "VE_ub", 0.86, 0.5149))
   standardized_vaccine_date_analysis <- ifelse(analysis == "standardized_vaccine_date", T, F)
   contact_prop_analysis <- ifelse(analysis == "contact_15", 0.15, ifelse(analysis == "contact_10", 0.10, 0.20))
   contact_dur_analysis <- 2 
@@ -23,15 +22,15 @@ for(analysis in cal_analysis){
   ## set starting value as the median of the prior
   set.seed(7)
   theta_ls <- par_ls <- list(mtl = NULL,
-               trt = NULL,
-               van = NULL)
+                             trt = NULL,
+                             van = NULL)
   theta0 <- vector()
   theta0[1:3] <- median(rnorm(10000, mean = qlogis(0.5), sd = 0.5))
   theta0[4] <- median(rnorm(10000, mean = qlogis(0.87), sd = 1))
-  theta0[5] <- median(rnorm(10000, mean = log(5), sd = 1))
-  theta0[6] <- median(rnorm(10000, mean = qlogis(0.67 / 0.80), sd = 5))
-  theta0[7] <- median(rnorm(10000, mean = qlogis((0.80 - 0.47) / (1 - 0.47)), sd = 1.5))
-  theta0[8] <- median(rnorm(10000, mean = qlogis((5 - 3) / (15 - 3)), sd = 1))
+  theta0[8:10] <- median(rnorm(10000, mean = qlogis(5 / 100), sd = 1))
+  theta0[5] <- median(rnorm(10000, mean = qlogis(0.67 / 0.80), sd = 5))
+  theta0[6] <- median(rnorm(10000, mean = qlogis((0.80 - 0.47) / (1 - 0.47)), sd = 1.5))
+  theta0[7] <- median(rnorm(10000, mean = qlogis((5 - 3) / (15 - 3)), sd = 1))
 
   # trial run
   llk_all(theta = theta0,
@@ -71,7 +70,7 @@ for(analysis in cal_analysis){
   print(cty)
   index_city <- ifelse(cty == "mtl", 1, ifelse(cty == "trt", 2, 3))
   imported_low <- ifelse(cty == "van", 1, ifelse(cty == "mtl", 2, 3))
-  imported_upp <- ifelse(cty == "van", 3, ifelse(cty == "mtl", 6, 6))
+  imported_upp <- ifelse(cty == "van", 6, ifelse(cty == "mtl", 8, 8)) 
   fit_par <- data.frame(names = c("imported cases (tau)",
                                 "transmission parameter (beta)", 
                                 "assortativity (omega)", 
@@ -80,10 +79,10 @@ for(analysis in cal_analysis){
                                 "duration infectiousness (1/gamma1)"),
                       value = round(c(imported_low + plogis(theta[index_city]) * (imported_upp - imported_low), 
                                       plogis(theta[4]),
-                                      exp(theta[5]), 
-                                      (0.7 + plogis(theta[6]) * (1 - 0.7)) * (0.47 + plogis(theta[7]) * (1 - 0.47)), 
-                                      0.47 + plogis(theta[7]) * (1 - 0.47), 
-                                      3 + plogis(theta[8]) * (15 - 3)),
+                                      plogis(theta[index_city + 7]) * 100, 
+                                      (0.7 + plogis(theta[5]) * (1 - 0.7)) * (0.47 + plogis(theta[6]) * (1 - 0.47)), 
+                                      0.47 + plogis(theta[6]) * (1 - 0.47), 
+                                      3 + plogis(theta[7]) * (15 - 3)),
                                     2)); print(fit_par)
   
   ## store fitted results
@@ -91,7 +90,34 @@ for(analysis in cal_analysis){
   theta_ls[[cty]] <- theta # in the logit scale
   par_ls[[cty]] <- fit_par # transform back to regular scale
   
-}
+  init.pop.fn(cty, 1)
+  load.params.fn(VE_analysis,
+                 contact_prop_analysis,
+                 standardized_vaccine_date_analysis)
+  period_mod_cty <- ifelse(cty == "mtl", 150, ifelse(cty == "trt", 170, 160))
+  map_fit <- fn_model(city = cty,
+                           import_cases_city = imported_low + plogis(theta[index_city]) * (imported_upp - imported_low),
+                           bbeta_city = plogis(theta[4]),
+                           omega_city = plogis(theta[index_city + 7]) * 100,
+                           period_city = period_mod_cty,
+                           RR_H_city = (0.7 + plogis(theta[5]) * (1 - 0.7)) * (0.47 + plogis(theta[6]) * (1 - 0.47)),
+                           RR_L_city = 0.47 + plogis(theta[6]) * (1 - 0.47),
+                           gamma1_city = 1 / (3 + plogis(theta[7]) * (15 - 3)),
+                           VACCINATING = 1,
+                           TRACING = 1,
+                           cpp = run_cpp)
+  province = ifelse(cty == "van", "BC", ifelse(cty == "trt", "ON", "QC"))
+  plot_max = ifelse(cty == "trt", 20, 10)
+  cases <- map_fit$cases[map_fit$time > days_imported[[cty]]]
+  time <- seq(0, (length(cases) - 1) * 0.25 , 0.25)
+  plot(cases ~ time,
+       main = cty,
+       ylim = c(0, plot_max))
+  points(case_data[case_data$prov == province, ]$city_cases)
+  }
+  
+  t1 <- Sys.time()
+  print(t1 - t0)
 
   set.seed(77)
   ci_ls <- simul_fun_all(cal_type = 1,
@@ -268,7 +294,7 @@ saveRDS(data_xval_cum_vaccine, sprintf("./out/%s/data_xval_cum_vaccine.rds", ana
 # wgt_resample <- ci_ls$wgt_resample
 # hist(wgt_resample, breaks = 100, xlim = c(0, 0.05))
 
-t1 <- Sys.time()
+t2 <- Sys.time()
 print(analysis)
-print(t1 - t0)
+print(t2 - t1)
 } # for analysis

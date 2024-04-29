@@ -40,14 +40,14 @@ for(analysis in plot_analysis){
                                  city_name == "Vancouver" ~ "Panel C): Vancouver"))
 
   p_AF <- ggplot(data_mod_fit, aes(x = date, y = cases)) +
-  geom_line(aes(linetype = "Observed", col = "Observed"), linewidth = 0.5) +
-  geom_ribbon(aes(ymin = cases_lci, ymax = cases_uci, fill = "Observed"), alpha = 0.4) +
+  geom_line(aes(linetype = "Observed (all three interventions)", col = "Observed (all three interventions)"), linewidth = 0.5) +
+  geom_ribbon(aes(ymin = cases_lci, ymax = cases_uci, fill = "Observed (all three interventions)"), alpha = 0.4) +
   geom_line(data_nothing_fit, 
             mapping = aes(x = date, y = cases, 
-                          linetype = "Without all three interventions", 
-                          col = "Without all three interventions",
-                          fill = "Without all three interventions"), linewidth = 0.5 ) +
-  # geom_ribbon(data_nothing_fit, mapping = aes(ymin = cases_lci, ymax = cases_uci, col = NULL, fill = "Without all three interventions"), alpha = 0.3) +
+                          linetype = "Unmitigated epidemic \n (without any of the three interventions)", 
+                          col = "Unmitigated epidemic \n (without any of the three interventions)",
+                          fill = "Unmitigated epidemic \n (without any of the three interventions)"), linewidth = 0.5 ) +
+  # geom_ribbon(data_nothing_fit, mapping = aes(ymin = cases_lci, ymax = cases_uci, col = NULL, fill = "Unmitigated epidemic \n (without any of the three interventions)"), alpha = 0.3) +
 
   geom_line(data_behavourial_fit, mapping = aes(x = date, y = cases, linetype = "With only partner number change", col = "With only partner number change", fill = "With only partner number change"), linewidth = 0.5 ) +
   # geom_ribbon(data_behavourial_fit, mapping = aes(ymin = cases_lci, ymax = cases_uci, col = NULL, fill = "With only partner number change"), alpha = 0.3) +
@@ -63,19 +63,19 @@ for(analysis in plot_analysis){
              strip.position = "bottom") +
   # coord_cartesian(xlim = range(data_incid$date)) +
   scale_x_date(date_breaks = "1 month", date_labels = "%b") +
-  scale_color_manual(values = c("Observed" = "green4", "With only partner number change" = "#6899c9", "With only contact tracing" = "purple2", "With only first-dose vaccination" = "firebrick4", "Without all three interventions" = "ivory3"),
-                     breaks = c("Observed", "With only partner number change", "With only contact tracing", "With only first-dose vaccination", "Without all three interventions")) +
+  scale_color_manual(values = c("Observed (all three interventions)" = "green4", "With only partner number change" = "#6899c9", "With only contact tracing" = "purple2", "With only first-dose vaccination" = "firebrick4", "Unmitigated epidemic \n (without any of the three interventions)" = "ivory3"),
+                     breaks = c("Observed (all three interventions)", "With only partner number change", "With only contact tracing", "With only first-dose vaccination", "Unmitigated epidemic \n (without any of the three interventions)")) +
   scale_fill_manual(values = c("green4", "white", "white", "white", "white"),
-                    breaks = c("Observed", "With only partner number change", "With only contact tracing", "With only first-dose vaccination", "Without all three interventions")) +
+                    breaks = c("Observed (all three interventions)", "With only partner number change", "With only contact tracing", "With only first-dose vaccination", "Unmitigated epidemic \n (without any of the three interventions)")) +
   scale_linetype_manual(values = c(1, 1, 1, 1, 1),
-                        breaks = c("Observed", "With only partner number change", "With only contact tracing", "With only first-dose vaccination", "Without all three interventions")) +
+                        breaks = c("Observed (all three interventions)", "With only partner number change", "With only contact tracing", "With only first-dose vaccination", "Unmitigated epidemic \n (without any of the three interventions)")) +
   geom_vline(aes(xintercept = vaccine_date), col = "firebrick4", linetype = 2, linewidth = 0.3) +
   labs(x = "Date", y = "Reported mpox cases (day)", linetype = NULL, shape = NULL, color  = NULL, fill = NULL, alpha = NULL) +
   theme_bw() +
   theme(
     legend.box.background = element_rect(fill = "transparent", colour = "transparent"),
     legend.background = element_rect(colour = "transparent", fill = alpha("white", 0.4)),
-    legend.position = c(.79, .92),
+    legend.position = c(.77, .92),
     legend.key.size = unit(0.4, 'cm'),
     legend.direction = "vertical",
     legend.text = element_text(size = 5.3),

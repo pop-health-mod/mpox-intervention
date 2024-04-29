@@ -44,8 +44,8 @@ all_results <- do.call(rbind.data.frame, c(data_results_list, make.row.names = F
          estimate = ifelse(AF, paste0(round(estimate * 100, 0), "%"), round(estimate, 2)),
          lci = ifelse(AF, paste0(round(lci * 100, 0), "%"), round(lci, 2)),
          uci = ifelse(AF, paste0(round(uci * 100, 0), "%"), round(uci, 2)),
-         `estimate (95% CrI)` = ifelse(AF, paste0(estimate, " (", lci, "-", uci, ")"),paste0(estimate, " (", lci, ",", uci, ")")),
-         city_name = ifelse((!AF & name != "imported cases (tau)"), "all", city_name)) %>% 
+         `estimate (95% CrI)` = ifelse(AF, paste0(estimate, " (", lci, "-", uci, ")"), paste0(estimate, " (", lci, ",", uci, ")")),
+         city_name = ifelse((!AF & !name %in% c("imported cases (tau)", "assortativity (omega)")), "all", city_name)) %>% 
   dplyr::select(analysis, city_name, name, `estimate (95% CrI)`, AF)  %>%
   distinct(analysis, city_name, name, .keep_all = TRUE) 
  
@@ -55,5 +55,6 @@ AF_results <- all_results %>% filter(AF) %>% arrange(name, analysis, city_name) 
 para_results <- all_results %>% filter(!AF) %>% arrange(name, analysis, city_name) %>%  dplyr::select(-AF)
 write.csv( AF_results,
           "./result-tbl/AF_results_tbl.csv")
+view(para_results)
 write.csv( para_results,
            "./result-tbl/para_results_tbl.csv")

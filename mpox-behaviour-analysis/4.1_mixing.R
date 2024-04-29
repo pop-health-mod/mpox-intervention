@@ -13,21 +13,31 @@ lab = list( # strata labels
   a = unique(X0$age_cats),
   h = unique(X0$hiv_cats),
   s = unique(X0$sa_cats))
-lab$ah = c(outer(lab$a,lab$h,paste)) # age:hiv
+lab$ah = c(outer(lab$a, lab$h, paste)) # age:hiv
 # data pre-processing & constants
-X_ah = aggregate(cbind(x=prop*c_ash)~age_cats+hiv_cats+city,X0,sum) # x = total contacts
-H_mtl = matrix(c(.924,.660,.076,.340),2,2) # hiv mixing (probability) from Milwid2022
-H = list(mtl=H_mtl,trt=NA*H_mtl,van=NA*H_mtl)
-N = list(mtl=54000,trt=78000,van=26100) # population size (not actually needed)
+X_ah = aggregate(cbind(x = prop * c_ash) ~ age_cats + hiv_cats + city,
+                 X0,
+                 sum) # x = total contacts
+H_mtl = matrix(c(.924, .660, .076, .340), 2, 2) # hiv mixing (probability) from Milwid2022
+H = list(mtl = H_mtl,
+         trt = NA * H_mtl,
+         van = NA * H_mtl)
+N = list(mtl = 54000, 
+         trt = 78000, 
+         van = 26100) # population size (not actually needed)
 # run fitting
 mix_odds = list() # for each city
 fix = 0 # fix odds[1] (hiv) after estimating from mtl
 for (y in lab$y){ # cities
-  x = N[[y]] * setNames(subset(X_ah,city==y)$x,lab$ah)      # total contacts
-  mix_odds[[y]] = fit.mix.ah(x=x,A=A[[y]],H=H[[y]],fix=fix) # odds vector
-  if (y=='mtl'){ fix = mix_odds[[y]][1] }
+  x = N[[y]] * setNames(subset(X_ah, city == y)$x,
+                        lab$ah)      # total contacts
+  mix_odds[[y]] = fit.mix.ah(x = x,
+                             A = A[[y]],
+                             H = H[[y]],
+                             fix = fix) # odds vector
+  if (y == 'mtl'){ fix = mix_odds[[y]][1] }
   else         { mix_odds[[y]][1] = fix }
 }
 # save output
-save(mix_odds,file="./parametrization-outputs/mix_odds.rda")
-# TODO: [JK] figures code
+save(mix_odds,
+     file = "./parametrization-outputs/mix_odds.rda")

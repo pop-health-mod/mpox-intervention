@@ -13,7 +13,7 @@ for(analysis in cal_analysis){
   
   print(analysis)
   
-  VE_analysis <- ifelse(analysis == "VE_lb", 0.4323, ifelse(analysis == "VE_ub", 0.5855, 0.5149))
+  VE_analysis <- ifelse(analysis == "VE_lb", 0.358, ifelse(analysis == "VE_ub", 0.86, 0.5149))
   contact_prop_analysis <- ifelse(analysis == "contact_15", 0.15, ifelse(analysis == "contact_10", 0.10, 0.20))
   contact_dur_analysis <- 2 
 
@@ -25,8 +25,8 @@ for(analysis in cal_analysis){
   theta0 <- vector()
   theta0[1:3] <- median(rnorm(10000, mean = qlogis(0.5), sd = 0.5))
   theta0[4] <- median(rnorm(10000, mean = qlogis(0.87), sd = 1))
-  theta0[5] <- median(rnorm(10000, mean = qlogis(0.5), sd = 1))
-  theta0[6] <- median(rnorm(10000, mean = qlogis((5 - 3) / (15 - 3)), sd = 1))
+  theta0[6:8] <- median(rnorm(10000, mean = qlogis(5 / 100), sd = 1))
+  theta0[5] <- median(rnorm(10000, mean = qlogis((5 - 3) / (15 - 3)), sd = 1))
 
   # trial run
   llk_all_sen(theta = theta0,
@@ -66,7 +66,7 @@ for(analysis in cal_analysis){
   print(cty)
   index_city <- ifelse(cty == "mtl", 1, ifelse(cty == "trt", 2, 3))
   imported_low <- ifelse(cty == "van", 1, ifelse(cty == "mtl", 2, 3))
-  imported_upp <- ifelse(cty == "van", 3, ifelse(cty == "mtl", 6, 6))
+  imported_upp <- ifelse(cty == "van", 6, ifelse(cty == "mtl", 8, 8))
   fit_par <- data.frame(names = c("imported cases (tau)",
                                 "transmission parameter (beta)", 
                                 "assortativity (omega)", 
@@ -75,10 +75,10 @@ for(analysis in cal_analysis){
                                 "duration infectiousness (1/gamma1)"),
                       value = round(c(imported_low + plogis(theta[index_city]) * (imported_upp - imported_low), 
                                       plogis(theta[4]),
-                                      plogis(theta[5]), 
+                                      plogis(theta[index_city + 5]) * 100, 
                                       0.67,
                                       0.80, 
-                                      3 + plogis(theta[6]) * (15 - 3)),
+                                      3 + plogis(theta[5]) * (15 - 3)),
                                     2)); print(fit_par)
   ## store fitted results
   # optimized parameters

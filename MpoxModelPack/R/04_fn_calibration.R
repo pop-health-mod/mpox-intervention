@@ -8,11 +8,11 @@
 #' @export 
 prior_dens_fix <- function(theta) {
   log_prior <- dnorm(theta[4], mean = qlogis(0.87), sd = 1, log = TRUE) + # beta (transmission parameter)
-    dnorm(theta[5], mean = log(1.5), sd = 1, log = TRUE) + # omega (mixing)
-    dnorm(theta[6], mean = qlogis(0.67 / 0.80), sd = 5, log = TRUE) + # RR_multiplier
-    dnorm(theta[7], mean = qlogis((0.80 - 0.47) / (1 - 0.47)), sd = 1.5, log = TRUE) +
-    dnorm(theta[8], mean = qlogis((5 - 3) / (15 - 3)), sd = 1, log = TRUE)  # duration of infectiousness (median ~ 5 days) (using transformed qlogis to bound within reasonable values)
-    return(log_prior)
+    dnorm(theta[5], mean = qlogis(0.67 / 0.80), sd = 5, log = TRUE) + # RR_multiplier
+    dnorm(theta[6], mean = qlogis((0.80 - 0.47) / (1 - 0.47)), sd = 1.5, log = TRUE)  +
+    dnorm(theta[7], mean = qlogis((5 - 3) / (15 - 3)), sd = 1, log = TRUE)  # duration of infectiousness (median ~ 5 days) (using transformed qlogis to bound within reasonable values)
+  
+  return(log_prior)
 }
 
 #' @title llk_all
@@ -40,10 +40,11 @@ llk_all <- function(theta,
   for(cal_city in c("mtl", "trt", "van")){
     
     index_city <- ifelse(cal_city == "mtl", 1, ifelse(cal_city == "trt", 2, 3))
-    log_prior_vary <- dnorm(theta[index_city], mean = qlogis(0.5), sd = 0.5, log = TRUE)
+    log_prior_vary <- dnorm(theta[index_city], mean = qlogis(0.5), sd = 0.5, log = TRUE) +
+      dnorm(theta[index_city + 7], mean = qlogis(5 / 100), sd = 1, log = TRUE)
     
     imported_low <- ifelse(cal_city == "van", 1, ifelse(cal_city == "mtl", 2, 3))
-    imported_upp <- ifelse(cal_city == "van", 3, ifelse(cal_city == "mtl", 6, 6))
+    imported_upp <- ifelse(cal_city == "van", 6, ifelse(cal_city == "mtl", 8, 8))
     
     # getting predictions
     # load population in the selected cities
@@ -59,10 +60,10 @@ llk_all <- function(theta,
     model_output <- fn_model(city = cal_city,
                              import_cases_city = imported_low + plogis(theta[index_city]) * (imported_upp - imported_low),
                              bbeta_city = plogis(theta[4]),
-                             omega_city = exp(theta[5]),
-                             RR_H_city = (0.7 + plogis(theta[6]) * (1 - 0.7)) * (0.47 + plogis(theta[7]) * (1 - 0.47)),
-                             RR_L_city = 0.47 + plogis(theta[7]) * (1 - 0.47),
-                             gamma1_city = 1 / (3 + plogis(theta[8]) * (15 - 3)),
+                             omega_city = plogis(theta[index_city + 7]) * 100,
+                             RR_H_city = (0.7 + plogis(theta[5]) * (1 - 0.7)) * (0.47 + plogis(theta[6]) * (1 - 0.47)),
+                             RR_L_city = 0.47 + plogis(theta[6]) * (1 - 0.47),
+                             gamma1_city = 1 / (3 + plogis(theta[7]) * (15 - 3)),
                              period_city = 150,
                              VACCINATING = 1,
                              TRACING = 1,
@@ -73,9 +74,6 @@ llk_all <- function(theta,
     mod_inc <- model_output$cases[model_output$time %in% case_city[[cal_city]]$time_intro]
 
     # log-likelihood
-    # log_lik_city <- sum(dpois(x = case_city[[cal_city]]$incidence,
-    #                      lambda = mod_inc, 
-    #                      log = TRUE))
     log_lik_city <- sum(dnbinom(x = case_city[[cal_city]]$incidence,
                               mu = mod_inc, 
                               size = 0.1,
@@ -218,7 +216,7 @@ simul_fun_all <- function(cal_type,
       cl <- parallel::makeCluster(parallel::detectCores()) # use all cores
       doParallel::registerDoParallel(cl)
       parallel::clusterCall(cl, function() library(magrittr))
-      parallel::clusterExport(cl, c("contact_rate_prop", "case_data", "A_matrix", "llk_all", "prior_dens_fix", "init.pop.fn", "load.params.fn", "fn_model"))
+      parallel::clusterExport(cl, c("contact_rate_prop", "case_data", "mix_odds", "llk_all", "prior_dens_fix", "init.pop.fn", "load.params.fn", "fn_model"))
       loglikelihood_sir <- foreach::foreach(i = 1:nrow(par_sir), .combine = "c") %dopar% {
         par_sir_i <- par_sir[i, ]
         llk_all(theta = par_sir_i,
@@ -261,7 +259,7 @@ simul_fun_all <- function(cal_type,
     index_city <- ifelse(cty == "mtl", 1, ifelse(cty == "trt", 2, 3))
     
     imported_low <- ifelse(cty == "van", 1, ifelse(cty == "mtl", 2, 3))
-    imported_upp <- ifelse(cty == "van", 3, ifelse(cty == "mtl", 6, 6))
+    imported_upp <- ifelse(cty == "van", 6, ifelse(cty == "mtl", 8, 8)) 
     
     ### make an empty dataset for storing modeled cases 
     ### using each set of resampled parameters
@@ -301,88 +299,88 @@ simul_fun_all <- function(cal_type,
       tmp <- fn_model(city = cty,
                       import_cases_city = imported_low + plogis(samp[s, index_city]) * (imported_upp - imported_low),
                       bbeta_city = plogis(samp[s, 4]),
-                      omega_city = exp(samp[s, 5]),
+                      omega_city = plogis(samp[s, index_city + 7]) * 100,
                       period_city = period_mod_cty,
-                      RR_H_city = (0.7 + plogis(samp[s, 6]) * (1 - 0.7)) * (0.47 + plogis(samp[s, 7]) * (1 - 0.47)),
-                      RR_L_city = 0.47 + plogis(samp[s, 7]) * (1 - 0.47),
-                      gamma1_city = 1 / (3 + plogis(samp[s, 8]) * (15 - 3)),
+                      RR_H_city = (0.7 + plogis(samp[s, 5]) * (1 - 0.7)) * (0.47 + plogis(samp[s, 6]) * (1 - 0.47)),
+                      RR_L_city = 0.47 + plogis(samp[s, 6]) * (1 - 0.47),
+                      gamma1_city = 1 / (3 + plogis(samp[s, 7]) * (15 - 3)),
                       VACCINATING = 1,
                       TRACING = 1,
                       cpp = cal_cpp)
       tmp_behavourial <- fn_model(city = cty,
                                   import_cases_city = imported_low + plogis(samp[s, index_city]) * (imported_upp - imported_low),
                                   bbeta_city = plogis(samp[s, 4]),
-                                  omega_city = exp(samp[s, 5]),
+                                  omega_city = plogis(samp[s, index_city + 7]) * 100,
                                   period_city = period_mod_cty,
-                                  RR_H_city = (0.7 + plogis(samp[s, 6]) * (1 - 0.7)) * (0.47 + plogis(samp[s, 7]) * (1 - 0.47)),
-                                  RR_L_city = 0.47 + plogis(samp[s, 7]) * (1 - 0.47),
-                                  gamma1_city = 1 / (3 + plogis(samp[s, 8]) * (15 - 3)),
+                                  RR_H_city = (0.7 + plogis(samp[s, 5]) * (1 - 0.7)) * (0.47 + plogis(samp[s, 6]) * (1 - 0.47)),
+                                  RR_L_city = 0.47 + plogis(samp[s, 6]) * (1 - 0.47),
+                                  gamma1_city = 1 / (3 + plogis(samp[s, 7]) * (15 - 3)),
                                   VACCINATING = 0,
                                   TRACING = 0,
                                   cpp = cal_cpp)
       tmp_vaccine <- fn_model(city = cty,
                               import_cases_city = imported_low + plogis(samp[s, index_city]) * (imported_upp - imported_low),
                               bbeta_city = plogis(samp[s, 4]),
-                              omega_city = exp(samp[s, 5]),
+                              omega_city = plogis(samp[s, index_city + 7]) * 100,
                               period_city = period_mod_cty,
                               RR_H_city = 1,  
                               RR_L_city = 1,
-                              gamma1_city = 1 / (3 + plogis(samp[s, 8]) * (15 - 3)),
+                              gamma1_city = 1 / (3 + plogis(samp[s, 7]) * (15 - 3)),
                               VACCINATING = 1,
                               TRACING = 0,
                               cpp = cal_cpp)
       tmp_tracing <- fn_model(city = cty,
                               import_cases_city = imported_low + plogis(samp[s, index_city]) * (imported_upp - imported_low),
                               bbeta_city = plogis(samp[s, 4]),
-                              omega_city = exp(samp[s, 5]),
+                              omega_city = plogis(samp[s, index_city + 7]) * 100,
                               period_city = period_mod_cty,
                               RR_H_city = 1,
                               RR_L_city = 1,
-                              gamma1_city = 1 / (3 + plogis(samp[s, 8]) * (15 - 3)),
+                              gamma1_city = 1 / (3 + plogis(samp[s, 7]) * (15 - 3)),
                               VACCINATING = 0,
                               TRACING = 1,
                               cpp = cal_cpp)
       tmp_bv <- fn_model(city = cty,
                                   import_cases_city = imported_low + plogis(samp[s, index_city]) * (imported_upp - imported_low),
                                   bbeta_city = plogis(samp[s, 4]),
-                                  omega_city = exp(samp[s, 5]),
+                                  omega_city = plogis(samp[s, index_city + 7]) * 100,
                                   period_city = period_mod_cty,
-                                  RR_H_city = (0.7 + plogis(samp[s, 6]) * (1 - 0.7)) * (0.47 + plogis(samp[s, 7]) * (1 - 0.47)),
-                                  RR_L_city = 0.47 + plogis(samp[s, 7]) * (1 - 0.47),
-                                  gamma1_city = 1 / (3 + plogis(samp[s, 8]) * (15 - 3)),
+                                  RR_H_city = (0.7 + plogis(samp[s, 5]) * (1 - 0.7)) * (0.47 + plogis(samp[s, 6]) * (1 - 0.47)),
+                                  RR_L_city = 0.47 + plogis(samp[s, 6]) * (1 - 0.47),
+                                  gamma1_city = 1 / (3 + plogis(samp[s, 7]) * (15 - 3)),
                                   VACCINATING = 1,
                                   TRACING = 0,
                                   cpp = cal_cpp)
       tmp_bt <- fn_model(city = cty,
                          import_cases_city = imported_low + plogis(samp[s, index_city]) * (imported_upp - imported_low),
                          bbeta_city = plogis(samp[s, 4]),
-                         omega_city = exp(samp[s, 5]),
+                         omega_city = plogis(samp[s, index_city + 7]) * 100,
                          period_city = period_mod_cty,
-                         RR_H_city = (0.7 + plogis(samp[s, 6]) * (1 - 0.7)) * (0.47 + plogis(samp[s, 7]) * (1 - 0.47)),
-                         RR_L_city = 0.47 + plogis(samp[s, 7]) * (1 - 0.47),
-                         gamma1_city = 1 / (3 + plogis(samp[s, 8]) * (15 - 3)),
+                         RR_H_city = (0.7 + plogis(samp[s, 5]) * (1 - 0.7)) * (0.47 + plogis(samp[s, 6]) * (1 - 0.47)),
+                         RR_L_city = 0.47 + plogis(samp[s, 6]) * (1 - 0.47),
+                         gamma1_city = 1 / (3 + plogis(samp[s, 7]) * (15 - 3)),
                          VACCINATING = 0,
                          TRACING = 1,
                          cpp = cal_cpp)
       tmp_vt <- fn_model(city = cty,
                          import_cases_city = imported_low + plogis(samp[s, index_city]) * (imported_upp - imported_low),
                          bbeta_city = plogis(samp[s, 4]),
-                         omega_city = exp(samp[s, 5]),
+                         omega_city = plogis(samp[s, index_city + 7]) * 100,
                          period_city = period_mod_cty,
                          RR_H_city = 1,
                          RR_L_city = 1,
-                         gamma1_city = 1 / (3 + plogis(samp[s, 8]) * (15 - 3)),
+                         gamma1_city = 1 / (3 + plogis(samp[s, 7]) * (15 - 3)),
                          VACCINATING = 1,
                          TRACING = 1,
                          cpp = cal_cpp)
       tmp_nothing <- fn_model(city = cty,
                               import_cases_city = imported_low + plogis(samp[s, index_city]) * (imported_upp - imported_low),
                               bbeta_city = plogis(samp[s, 4]),
-                              omega_city = exp(samp[s, 5]),
+                              omega_city = plogis(samp[s, index_city + 7]) * 100,
                               period_city = period_mod_cty,
                               RR_H_city = 1,
                               RR_L_city = 1,
-                              gamma1_city = 1 / (3 + plogis(samp[s, 8]) * (15 - 3)),
+                              gamma1_city = 1 / (3 + plogis(samp[s, 7]) * (15 - 3)),
                               VACCINATING = 0,
                               TRACING = 0,
                               cpp = cal_cpp)
@@ -477,22 +475,22 @@ simul_fun_all <- function(cal_type,
                                                     "duration infectiousness (1/gamma1)"),
                               lci = c(imported_low + plogis(par_ci$lower[index_city]) * (imported_upp - imported_low),
                                       plogis(par_ci$lower[4]),
-                                      exp(par_ci$lower[5]), 
-                                      (0.7 + plogis(par_ci$lower[6]) * (1 - 0.7)) * (0.47 + plogis(par_ci$lower[7]) * (1 - 0.47)), 
-                                      0.47 + plogis(par_ci$lower[7]) * (1 - 0.47), 
-                                      3 + plogis(par_ci$lower[8]) * (15 - 3)),
+                                      plogis(par_ci$lower[index_city + 7]) * 100, 
+                                      (0.7 + plogis(par_ci$lower[5]) * (1 - 0.7)) * (0.47 + plogis(par_ci$lower[6]) * (1 - 0.47)), 
+                                      0.47 + plogis(par_ci$lower[6]) * (1 - 0.47), 
+                                      3 + plogis(par_ci$lower[7]) * (15 - 3)),
                               med = c(imported_low + plogis(par_ci$med[index_city]) * (imported_upp - imported_low),
                                       plogis(par_ci$med[4]),
-                                      exp(par_ci$med[5]), 
-                                      (0.7 + plogis(par_ci$med[6]) * (1 - 0.7)) * (0.47 + plogis(par_ci$med[7]) * (1 - 0.47)), 
-                                      0.47 + plogis(par_ci$med[7]) * (1 - 0.47), 
-                                      3 + plogis(par_ci$med[8]) * (15 - 3)),
+                                      plogis(par_ci$med[index_city + 7]) * 100, 
+                                      (0.7 + plogis(par_ci$med[5]) * (1 - 0.7)) * (0.47 + plogis(par_ci$med[6]) * (1 - 0.47)), 
+                                      0.47 + plogis(par_ci$med[6]) * (1 - 0.47), 
+                                      3 + plogis(par_ci$med[7]) * (15 - 3)),
                               uci = c(imported_low + plogis(par_ci$upper[index_city]) * (imported_upp - imported_low),
                                       plogis(par_ci$upper[4]),
-                                      exp(par_ci$upper[5]), 
-                                      (0.7 + plogis(par_ci$upper[6]) * (1 - 0.7)) * (0.47 + plogis(par_ci$upper[7]) * (1 - 0.47)), 
-                                      0.47 + plogis(par_ci$upper[7]) * (1 - 0.47), 
-                                      3 + plogis(par_ci$upper[8]) * (15 - 3)))
+                                      plogis(par_ci$upper[index_city + 7]) * 100, 
+                                      (0.7 + plogis(par_ci$upper[5]) * (1 - 0.7)) * (0.47 + plogis(par_ci$upper[6]) * (1 - 0.47)), 
+                                      0.47 + plogis(par_ci$upper[6]) * (1 - 0.47), 
+                                      3 + plogis(par_ci$upper[7]) * (15 - 3)))
     posterior_AF_ci[[cty]] <-  data.frame(names = c("behavourial change", 
                                              "first-dose vaccination", 
                                              "contact tracing",
