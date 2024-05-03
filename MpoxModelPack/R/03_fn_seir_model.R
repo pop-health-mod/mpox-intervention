@@ -4,7 +4,8 @@
   #' @param city model one city at a time: "mtl" = Montreal, "trt" = Toronto, "van" = Vancouver
   #' @param import_cases_city number of imported cases
   #' @param bbeta_city transmission probability per effective contact
-  #' @param omega_city mixing parameters
+  #' @param omega_city mixing parameters assortativity odds ratio scale
+  #' @param sd_city mixing parameters standard deviation
   #' @param RR_H_city rate ratio of change in sexual partner numbers among GBM with > 7 sexual partners before 2022
   #' @param RR_L_city rate ratio of change in sexual partner numbers among GBM with <= 7 sexual partners before 2022
   #' @param gamma1_city 1/duration of effective infectious period
