@@ -261,22 +261,6 @@ Rcpp::List fn_model_cpp(double bbeta_city,
               NumericMatrix temp_mat = apply_mix_odds_cpp(mix_s2_rand, 
                                                           mix_odds_s_city);
               
-              
-              // if(t == 1 && a == 1 && h == 1 && ap == 1 && hp == 1 ){
-              //   Rcout << "a = " << a << " ";
-              //   Rcout << "h = " << h << " ";
-              //   Rcout << "ap = " << ap << " ";
-              //   Rcout << "hp = " << hp << "\n";
-              //   // Rcout << mix_ah4p[a][h][ap][hp] << "\n";
-              //   // Rcout << x_s << "\n";
-              //   // Rcout << x_sp << "\n";
-              //   // Rcout << n_ash_t[a][14][h]<< "\n";
-              //   // Rcout << c_ash_city[a * n_sa_cats * n_hiv_cats + 14 * n_hiv_cats + h] << "\n";
-              //   // Rcout << RR_ash_city[a * n_sa_cats * n_hiv_cats + 14 * n_hiv_cats + h] << "\n";
-              //   // Rcout << x_ash_t[a][14][h]<< "\n";
-              //   Rcout << temp_mat<< "\n";
-              // }
-              
               for(int s = 0; s != n_sa_cats; ++ s){
                 for(int sp = 0; sp != n_sa_cats; ++ sp){
                   mix_ash6c[a][s][h][ap][sp][hp]  =  temp_mat(s, sp) / n_ash_t[a][s][h];
