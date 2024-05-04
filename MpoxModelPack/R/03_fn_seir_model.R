@@ -242,58 +242,8 @@
                                                            mix_odds_s_city) / n_ash_t[a, ,h] # contacts * mixing per-person
               
               
-              # if(t == 2 && a == "30-39" && h == "1" && ap == "30-39" && hp =="1"){
-              #   
-              #   m <- apply_mix_odds_cpp(mix_s2_rand, 
-              #                            mix_odds_s_city)
-              #   
-              #   print(m)
-              # 
-              #   colnames(m) <- paste("group_", 1:15, sep="")
-              #   rownames(m) <- paste("group_", 1:15, sep="")
-              #   
-              #   image(1:ncol(m), 1:nrow(m), t(m), col = terrain.colors(300), axes = FALSE)
-              #   axis(1, 1:ncol(m), colnames(m))
-              #   axis(2, 1:nrow(m), rownames(m))
-              #   for (x in 1:ncol(m))
-              #     for (y in 1:nrow(m))
-              #       text(x, 
-              #            y, 
-              #            signif(m[y,x], 2))
-              #   }
-              
               
             }}}}
-      
-      # if(t == 2){
-      #   # comment out / n_ash_t[a, ,h]
-      # X_ashapsphp <- mix_ash6c
-      # mat_p <- matrix(NA, n_sa_cats, n_sa_cats)
-      # rownames(mat_p) <- names_sa_cats
-      # colnames(mat_p) <- names_sa_cats
-      # for(s in names_sa_cats){
-      #   for(sp in names_sa_cats){
-      #     mat_p[s, sp] <- sum(X_ashapsphp[, s, , , sp, ] ) / sum(x_ash_t[, s, ])
-      # }}
-      # 
-      # colnames(mat_p) <- paste("group_", 1:15, sep="")
-      # rownames(mat_p) <- paste("group_", 1:15, sep="")
-      # 
-      #   image(1:ncol(mat_p), 1:nrow(mat_p), t(mat_p), col = terrain.colors(300), axes = FALSE)
-      #   axis(1, 1:ncol(mat_p), colnames(mat_p))
-      #   axis(2, 1:nrow(mat_p), rownames(mat_p))
-      #   for (x in 1:ncol(mat_p))
-      #     for (y in 1:nrow(mat_p))
-      #       text(x,
-      #            y,
-      #            signif(mat_p[y,x], 2))
-      # 
-      # print(rowSums(mat_p))
-      # }
-      
-      
-      
-      
       
       
       for (a in names_age_cats){

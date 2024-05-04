@@ -28,11 +28,10 @@ HIV <- sort(as.character(unique(data_pmf$hiv_cats)))
 # categorize based on groups
 df_results <- create_city_list()
 
+cdf_cutoff <- c(.60, .90, .95, .96, .97,
+                .98, .99, .995, .998, 1)
+
 for(cty in c("mtl", "trt", "van")){
-  
-  cdf_cutoff <- c(.30, .40, .50, .60, .70, 
-                  .80, .90, .95, .96, .97, 
-                  .98, .99, .995, .998, 1) 
   
   df_results[[cty]] <- vector("list", length(AGES))
   names(df_results[[cty]]) <- AGES

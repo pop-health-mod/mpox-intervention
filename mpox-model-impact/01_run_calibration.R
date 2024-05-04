@@ -5,8 +5,7 @@ library(tidyverse)
 
 run_cpp <- T # if run model in cpp or not
 cal_cities <- c("mtl", "trt", "van")
-cal_analysis <- c("contact_10", "standardized_vaccine_date", "VE_lb", "VE_ub")
-# cal_analysis <- c("main","contact_15")
+cal_analysis <- c("main", "contact_15", "contact_10", "standardized_vaccine_date", "VE_lb", "VE_ub")
 
 for(analysis in cal_analysis){
   
