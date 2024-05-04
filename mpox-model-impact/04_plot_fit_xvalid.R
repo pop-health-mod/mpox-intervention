@@ -14,11 +14,6 @@ data_incid <- data_incid %>%
                                prov == "BC" ~ "Panel C): Vancouver"))
 data_incid <- subset(data_incid, time_conti < 150)
 
-data_mod_fit <- readRDS("./out/main/data_mod_fit.rds") %>% 
-  mutate(city_name = case_when(city_name == "Montréal" ~ "Panel A): Montréal",
-                               city_name == "Toronto" ~ "Panel B): Toronto",
-                               city_name == "Vancouver" ~ "Panel C): Vancouver"))
-
 data_xval_obs <- read.csv("./observed_case_features.csv")
 data_xval_prop_case_age <- readRDS("./out/main/data_xval_prop_case_age.rds") %>% 
   mutate(metric = "Panel A): Proportion of cumulative cases by age groups")
@@ -36,6 +31,14 @@ data_xval <- rbind(data_xval_prop_case_age,
                    data_xval_cum_vaccine) %>% 
   rename(city = city_name)
 
+
+
+cal_analysis <- c("main", "RR_in", "contact_15", "contact_10", "VE_lb", "VE_ub", "standardized_vaccine_date")
+for(analysis in cal_analysis){
+data_mod_fit <- readRDS(sprintf("./out/%s/data_mod_fit.rds", analysis)) %>% 
+  mutate(city_name = case_when(city_name == "Montréal" ~ "Panel A): Montréal",
+                               city_name == "Toronto" ~ "Panel B): Toronto",
+                               city_name == "Vancouver" ~ "Panel C): Vancouver"))
 p_fit <- ggplot(data_mod_fit,
                       aes(x = date,
                           y = cases,
@@ -89,8 +92,8 @@ p_fit <- ggplot(data_mod_fit,
 
 p_fit
 ggsave(p_fit,
-       file = "./result-fig/p_fit.png",
-       width = 12, height = 18, units = "cm", dpi = 600)
+       file = sprintf("./result-fig/model_fit/%s.png", analysis),
+       width = 12, height = 18, units = "cm", dpi = 600)}
 
 p_xvalid <- ggplot(filter(data_xval_obs, grp != "vaccine"),
                    aes(x = grp,

@@ -51,10 +51,10 @@ all_results <- do.call(rbind.data.frame, c(data_results_list, make.row.names = F
  
 AF_results <- all_results %>% filter(AF) %>% arrange(name, analysis, city_name) %>%  dplyr::select(-AF) %>% 
   pivot_wider(names_from = "name", values_from = "estimate (95% CrI)")
-# view(AF_results)
+
 para_results <- all_results %>% filter(!AF) %>% arrange(name, analysis, city_name) %>%  dplyr::select(-AF)
+
 write.csv( AF_results,
           "./result-tbl/AF_results_tbl.csv")
-view(para_results)
 write.csv( para_results,
            "./result-tbl/para_results_tbl.csv")
