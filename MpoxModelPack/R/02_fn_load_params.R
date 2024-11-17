@@ -21,7 +21,8 @@
 load.params.fn <- function(VE = 0.5149,
                            contact_prop = 0.20,
                            contact_dur = 2,
-                           standardized_vaccine_date = F){
+                           standardized_vaccine_date = F,
+                           prioritized_vaccine = F){
   pars <- list()
   
   # group names 
@@ -75,23 +76,6 @@ load.params.fn <- function(VE = 0.5149,
   ## dt for the model
   pars$ddt <- 0.25
   pars$sstart <- 0
-  
-  # proportion of vaccination by age across cities
-  pars$vartheta[["mtl"]] <- c(`16-29` = 0.215,
-                              `30-39` = 0.265,
-                              `40-49` = 0.2,
-                              `50-59` = 0.16,
-                              `60+` = 0.16)
-  pars$vartheta[["trt"]] <- c(`16-29` = 0.221,
-                              `30-39` = 0.334,
-                              `40-49` = 0.182,
-                              `50-59` = 0.1315,
-                              `60+` = 0.1315)
-  pars$vartheta[["van"]] <- c(`16-29` = 0.218,
-                              `30-39` = 0.2995,
-                              `40-49` = 0.191,
-                              `50-59` = 0.14575,
-                              `60+` = 0.14575)
   
   ### first dose vaccinations and cases data
   for(city in CITIES){
@@ -147,6 +131,52 @@ load.params.fn <- function(VE = 0.5149,
       stop("Error: total number of people doesn't stay the same after partitioning into strata")
       }
         
+    
+    # proportion of vaccination by age across cities
+    ifelse(city == "mtl",
+           vartheta_age <- c(`16-29` = 0.215,
+                             `30-39` = 0.265,
+                             `40-49` = 0.2,
+                             `50-59` = 0.16,
+                             `60+` = 0.16),
+           ifelse(city == "trt", 
+                  vartheta_age <- c(`16-29` = 0.221,
+                                    `30-39` = 0.334,
+                                    `40-49` = 0.182,
+                                    `50-59` = 0.1315,
+                                    `60+` = 0.1315),
+                  vartheta_age <- c(`16-29` = 0.218,
+                                    `30-39` = 0.2995,
+                                    `40-49` = 0.191,
+                                    `50-59` = 0.14575,
+                                    `60+` = 0.14575)
+           ))
+    
+    
+    pars$vartheta_ash[[city]] <- array(rep(vartheta_age, pars$n_sa_cats * pars$n_age_cats * pars$n_hiv_cats), 
+                                       dim = c(pars$n_age_cats, pars$n_sa_cats, pars$n_hiv_cats),
+                                       dimnames = list(pars$names_age_cats, pars$names_sa_cats, pars$names_hiv_cats)
+    )
+    
+    if(prioritized_vaccine){
+      bar_city <- ifelse(city == "mtl", 2, 
+                         ifelse(city == "trt", 3, 3)) / 180
+      
+      for(a in pars$names_age_cats){
+        for(s in pars$names_sa_cats){
+          for(h in pars$names_hiv_cats){
+            if(pars$c_ash[[city]][a, s, h] < bar_city){
+              # only vaccinated to groups with partne numbers > bar
+              pars$vartheta_ash[[city]][a, s, h] <- 0} 
+            
+          }}}
+    }
+    
+    
+    
+    
+    
+    
     } # for city
   
   # initial population size in each compartment 
@@ -159,6 +189,9 @@ load.params.fn <- function(VE = 0.5149,
   
   # report delay
   pars$report_delay <- 1/2
+  
+  
+  
   
   # assign all to the global environment
   invisible(lapply( 1:length( pars ), function( x )

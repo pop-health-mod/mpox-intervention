@@ -63,7 +63,7 @@ for(analysis in plot_analysis){
              strip.position = "bottom") +
   # coord_cartesian(xlim = range(data_incid$date)) +
   scale_x_date(date_breaks = "1 month", date_labels = "%b") +
-  scale_color_manual(values = c("Observed (with all three interventions)" = "green4", "With only reduction in partner numbers" = "#6899c9", "With only contact tracing/isolation" = "purple2", "With only first-dose vaccination" = "firebrick4", "Unmitigated epidemic \n (without any of the three interventions)" = "ivory3"),
+  scale_color_manual(values = c("Observed (with all three interventions)" = "green4", "With only reduction in partner numbers" = "#0050f4", "With only contact tracing/isolation" = "mediumpurple1", "With only first-dose vaccination" = "firebrick4", "Unmitigated epidemic \n (without any of the three interventions)" = "ivory3"),
                      breaks = c("Observed (with all three interventions)", "With only reduction in partner numbers", "With only contact tracing/isolation", "With only first-dose vaccination", "Unmitigated epidemic \n (without any of the three interventions)")) +
   scale_fill_manual(values = c("green4", "white", "white", "white", "white"),
                     breaks = c("Observed (with all three interventions)", "With only reduction in partner numbers", "With only contact tracing/isolation", "With only first-dose vaccination", "Unmitigated epidemic \n (without any of the three interventions)")) +
@@ -85,7 +85,7 @@ for(analysis in plot_analysis){
   )
   # p_AF
   ggsave(p_AF,
-  file = sprintf("./result-fig/AF_ci/%s.png", analysis),
-  width = 10, height = 15, units = "cm", dpi = 600)
+  file = sprintf("./result-fig/AF_ci/%s.jpeg", analysis),
+  width = 90, height = 135, units = "mm", dpi = 500)
 
 }

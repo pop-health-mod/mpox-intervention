@@ -5,7 +5,8 @@ library(tidyverse)
 
 run_cpp <- T # if run model in cpp or not
 cal_cities <- c("mtl", "trt", "van")
-cal_analysis <- c("main", "contact_15", "contact_10", "standardized_vaccine_date", "VE_lb", "VE_ub")
+# cal_analysis <- c("main", "contact_15", "contact_10", "standardized_vaccine_date", "VE_lb", "VE_ub", "VE_1", "prioritize_vaccine")
+cal_analysis <- c(VE_1","prioritize_vaccine")
 
 for(analysis in cal_analysis){
   
@@ -13,10 +14,11 @@ for(analysis in cal_analysis){
   
   print(analysis)
   
-  VE_analysis <- ifelse(analysis == "VE_lb", 0.358, ifelse(analysis == "VE_ub", 0.86, 0.5149))
+  VE_analysis <- ifelse(analysis == "VE_lb", 0.358, ifelse(analysis == "VE_ub", 0.86, ifelse(analysis == "VE_1", 0.7187, 0.5149)))
   standardized_vaccine_date_analysis <- ifelse(analysis == "standardized_vaccine_date", T, F)
   contact_prop_analysis <- ifelse(analysis == "contact_15", 0.15, ifelse(analysis == "contact_10", 0.10, 0.20))
   contact_dur_analysis <- 2 
+  prioritize_vaccine_analysis <- (analysis == "prioritize_vaccine")
 
   ## set starting value as the median of the prior
   set.seed(7)
@@ -37,7 +39,8 @@ for(analysis in cal_analysis){
     cal_cpp = run_cpp,
     VE_llk = VE_analysis,
     contact_prop_llk = contact_prop_analysis,
-    contact_dur_llk = contact_dur_analysis)
+    contact_dur_llk = contact_dur_analysis,
+    if_prioritized_vac_llk = prioritize_vaccine_analysis)
   
   # Nelder-Mead better to get good starting values
   opt_nelder_mead <- optim(theta0, 
@@ -47,6 +50,7 @@ for(analysis in cal_analysis){
                          VE_llk = VE_analysis,
                          contact_prop_llk = contact_prop_analysis,
                          contact_dur_llk = contact_dur_analysis,
+                         if_prioritized_vac_llk = prioritize_vaccine_analysis,
                          method = "Nelder-Mead", 
                          control = list(fnscale = - 1, trace = 0, maxit = 250), 
                          hessian = FALSE)
@@ -59,6 +63,7 @@ for(analysis in cal_analysis){
              VE_llk = VE_analysis,
              contact_prop_llk = contact_prop_analysis,
              contact_dur_llk = contact_dur_analysis,
+             if_prioritized_vac_llk = prioritize_vaccine_analysis,
              method = "BFGS", 
              control = list(fnscale = -1, trace = 4, REPORT = 1, maxit = 250), 
              hessian = TRUE)
@@ -92,7 +97,8 @@ for(analysis in cal_analysis){
   init.pop.fn(cty, 1)
   load.params.fn(VE_analysis,
                  contact_prop_analysis,
-                 standardized_vaccine_date_analysis)
+                 standardized_vaccine_date_analysis,
+                 prioritize_vaccine_analysis)
   period_mod_cty <- ifelse(cty == "mtl", 150, ifelse(cty == "trt", 170, 160))
   map_fit <- fn_model(city = cty,
                            import_cases_city = imported_low + plogis(theta[index_city]) * (imported_upp - imported_low),
@@ -131,7 +137,8 @@ for(analysis in cal_analysis){
                             VE_sim = VE_analysis,
                             contact_prop_sim = contact_prop_analysis,
                             contact_dur_sim = contact_dur_analysis,
-                            standardized_vaccine_date_sim = standardized_vaccine_date_analysis)
+                            standardized_vaccine_date_sim = standardized_vaccine_date_analysis,
+                            if_prioritized_vac_sim = prioritize_vaccine_analysis)
   print(ci_ls$par_ci)
   print(ci_ls$AF_ci)
   
@@ -140,7 +147,8 @@ for(analysis in cal_analysis){
     init.pop.fn(cty, 1)
     load.params.fn(VE_analysis,
                    contact_prop_analysis,
-                   standardized_vaccine_date_analysis)
+                   standardized_vaccine_date_analysis,
+                   prioritize_vaccine_analysis)
     ci_ls$result[[cty]]$date <- ci_ls$result[[cty]]$time - days_imported[cty] + min(case_city[[cty]]$date)
   }
   

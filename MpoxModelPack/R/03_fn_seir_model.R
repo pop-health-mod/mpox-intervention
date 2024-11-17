@@ -51,7 +51,7 @@
     c_ash_city <- c_ash[[city]] # now array, to be converted into vector if use Rcpp
     psi_t_city <- psi_t[[city]]
     upsilon_city <- unname(upsilon[[city]])
-    vartheta_city <- vartheta[[city]]
+    vartheta_ash_city <- vartheta_ash[[city]] # now array, to be converted into vector if use Rcpp
     
     # NumericMatrix
     ### age-hiv
@@ -91,12 +91,18 @@
    colnames(c_ash_city) <- c("age", "sa", "hiv", "c_ash")
    N_ash_city <- as.data.frame.table(N_ash_city)
    colnames(N_ash_city) <- c("age", "sa", "hiv", "N_ash")
+   vartheta_ash_city <- as.data.frame.table(vartheta_ash_city)
+   colnames(vartheta_ash_city) <- c("age", "sa", "hiv", "vartheta_ash")
    RR_ash_city <- as.data.frame.table(RR_ash_city)
    colnames(RR_ash_city) <- c("age", "sa", "hiv", "RR_ash")
+   
    mega_ash_city <- merge(c_ash_city, 
                        N_ash_city)
    mega_ash_city <- merge(mega_ash_city,
+                          vartheta_ash_city)
+   mega_ash_city <- merge(mega_ash_city,
                        RR_ash_city)
+   
    for(comp in names_comp){
      init_prev_city[[comp]] <- as.data.frame.table(init_prev_city[[comp]])
      colnames(init_prev_city[[comp]]) <- c("age", "sa", "hiv", comp)
@@ -105,6 +111,7 @@
    }
    c_ash_city <- mega_ash_city$c_ash
    N_ash_city <- mega_ash_city$N_ash
+   vartheta_ash_city <- mega_ash_city$vartheta_ash
    RR_ash_city <- mega_ash_city$RR_ash
    init_prev_city <- as.matrix(mega_ash_city[, names_comp])
    
@@ -120,7 +127,7 @@
                        c_ash_city = c_ash_city,
                        psi_t_city =  psi_t_city,
                        upsilon_city = upsilon_city,
-                       vartheta_city = vartheta_city,
+                       vartheta_ash_city = vartheta_ash_city,
                        mix_odds_ah_city = mix_odds_ah_city,
                        mix_odds_s_city = mix_odds_s_city,
                        init_prev_city = init_prev_city
@@ -255,8 +262,8 @@
             lambda_t_ash <- bbeta_city * sum(mix_ash6c[a,s,h,,,] * prev_apsphp)
 
       # disease natural history compartments
-      X["S", t, a, s, h] <- X["S", t - 1, a, s, h] - ddt * (lambda_t_ash + psi_t * vartheta_city[a] / sum(X["S", t - 1, a, , ])) * X["S", t - 1, a, s, h] 
-      X["V", t, a, s, h] <- X["V", t - 1, a, s, h] + ddt * (psi_t * vartheta_city[a] * X["S", t - 1, a, s, h] / sum(X["S", t - 1, a, , ]) - iota * lambda_t_ash * X["V", t - 1, a, s, h])
+      X["S", t, a, s, h] <- X["S", t - 1, a, s, h] - ddt * (lambda_t_ash + psi_t * vartheta_ash_city[a, s, h] / sum(X["S", t - 1, a, , ])) * X["S", t - 1, a, s, h] 
+      X["V", t, a, s, h] <- X["V", t - 1, a, s, h] + ddt * (psi_t * vartheta_ash_city[a, s, h] * X["S", t - 1, a, s, h] / sum(X["S", t - 1, a, , ]) - iota * lambda_t_ash * X["V", t - 1, a, s, h])
       X["E", t, a, s, h] <- X["E", t - 1, a, s, h] + ddt * (lambda_t_ash * X["S", t - 1, a, s, h] + iota * lambda_t_ash * X["V", t - 1, a, s, h] - alpha * X["E", t - 1, a, s, h])
       X["I", t, a, s, h] <- X["I", t - 1, a, s, h] + ddt * ((1 - upsilon_t) * alpha * X["E", t - 1, a, s, h] - gamma1_city * X["I", t - 1, a, s, h])
       X["J", t, a, s, h] <- X["J", t - 1, a, s, h] + ddt * (upsilon_t * alpha * X["E", t - 1, a, s, h] - gamma2 * X["J", t - 1, a, s, h])

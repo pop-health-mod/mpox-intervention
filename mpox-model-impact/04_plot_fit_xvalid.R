@@ -92,8 +92,8 @@ p_fit <- ggplot(data_mod_fit,
 
 p_fit
 ggsave(p_fit,
-       file = sprintf("./result-fig/model_fit/%s.png", analysis),
-       width = 12, height = 18, units = "cm", dpi = 600)}
+       file = sprintf("./result-fig/model_fit/%s.jpeg", analysis),
+       width = 90, height = 135, units = "mm", dpi = 500)}
 
 p_xvalid <- ggplot(filter(data_xval_obs, grp != "vaccine"),
                    aes(x = grp,
@@ -141,5 +141,5 @@ p_xvalid <- ggplot(filter(data_xval_obs, grp != "vaccine"),
 p_xvalid
 
 ggsave(p_xvalid,
-       file = "./result-fig/p_fit_xvalid.png",
+       file = "./result-fig/p_fit_xvalid.jpeg",
        width = 12, height = 18, units = "cm", dpi = 600)

@@ -5,14 +5,16 @@ library(tidyverse)
 
 run_cpp <- T # if run model in cpp or not
 cal_cities <- c("mtl", "trt", "van")
-cal_analysis <- "RR_in"
+cal_analysis <- c("RR_in", "RR_1")
 
 for(analysis in cal_analysis){
   
   t0 <- Sys.time()
   
   print(analysis)
-  
+  ifelse(analysis == "RR_in",
+         RR_analysis <- c(0.80, 0.67),
+         RR_analysis <- c(1, 1) )
   VE_analysis <- ifelse(analysis == "VE_lb", 0.358, ifelse(analysis == "VE_ub", 0.86, 0.5149))
   contact_prop_analysis <- ifelse(analysis == "contact_15", 0.15, ifelse(analysis == "contact_10", 0.10, 0.20))
   contact_dur_analysis <- 2 
@@ -34,7 +36,8 @@ for(analysis in cal_analysis){
     cal_cpp = run_cpp,
     VE_llk = VE_analysis,
     contact_prop_llk = contact_prop_analysis,
-    contact_dur_llk = contact_dur_analysis)
+    contact_dur_llk = contact_dur_analysis,
+    fixed_RR = RR_analysis)
   
   # Nelder-Mead better to get good starting values
   opt_nelder_mead <- optim(theta0, 
@@ -44,6 +47,7 @@ for(analysis in cal_analysis){
                          VE_llk = VE_analysis,
                          contact_prop_llk = contact_prop_analysis,
                          contact_dur_llk = contact_dur_analysis,
+                         fixed_RR = RR_analysis,
                          method = "Nelder-Mead", 
                          control = list(fnscale = - 1, trace = 0, maxit = 250), 
                          hessian = FALSE)
@@ -56,6 +60,7 @@ for(analysis in cal_analysis){
              VE_llk = VE_analysis,
              contact_prop_llk = contact_prop_analysis,
              contact_dur_llk = contact_dur_analysis,
+             fixed_RR = RR_analysis,
              method = "BFGS", 
              control = list(fnscale = -1, trace = 4, REPORT = 1, maxit = 250), 
              hessian = TRUE)
@@ -76,8 +81,8 @@ for(analysis in cal_analysis){
                       value = round(c(imported_low + plogis(theta[index_city]) * (imported_upp - imported_low), 
                                       plogis(theta[4]),
                                       plogis(theta[index_city + 5]) * 100, 
-                                      0.67,
-                                      0.80, 
+                                      RR_analysis[1],
+                                      RR_analysis[2], 
                                       3 + plogis(theta[5]) * (15 - 3)),
                                     2)); print(fit_par)
   ## store fitted results
@@ -99,15 +104,15 @@ for(analysis in cal_analysis){
                             cal_cpp = run_cpp,
                             VE_sim = VE_analysis,
                             contact_prop_sim = contact_prop_analysis,
-                            contact_dur_sim = contact_dur_analysis)
+                            contact_dur_sim = contact_dur_analysis,
+                            fixed_RR_sim = RR_analysis)
   print(ci_ls$par_ci)
   print(ci_ls$AF_ci)
 
   # add date to fitted model
   for(cty in cal_cities){
     init.pop.fn(cty, 1)
-    load.params.fn(VE_analysis,
-                 contact_prop_analysis)
+    load.params.fn()
     ci_ls$result[[cty]]$date <- ci_ls$result[[cty]]$time - days_imported[cty] + min(case_city[[cty]]$date)
   }
   

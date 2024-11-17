@@ -9,6 +9,9 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(metafor)
 VE <- read_csv("./data-meta-analysis/meta-analysis-table-ve1.csv") # one-dose VE
+# VE_1 <- subset(VE, !trialname %in% c("Deputy et al.", "Sagy et al.")) # remove outliers
+VE_1 <- subset(VE, !trialname %in% c("Deputy et al.")) # remove outliers
+
 VE2 <- read_csv("./data-meta-analysis/meta-analysis-table-ve2.csv") # two-dose VE
 ```
 
@@ -19,6 +22,11 @@ VE$logor_cill <- log(1 - VE$cill)
 VE$logor_ciul <- log(1 - VE$ciul)
 VE$logse <- (VE$logor_ciul - VE$logor_cill) / (2 * qnorm(0.975))
 
+VE_1$logor <- log(1 - VE_1$ve)
+VE_1$logor_cill <- log(1 - VE_1$cill)
+VE_1$logor_ciul <- log(1 - VE_1$ciul)
+VE_1$logse <- (VE_1$logor_ciul - VE_1$logor_cill) / (2 * qnorm(0.975))
+
 VE2$logor <- log(1 - VE2$ve)
 VE2$logor_cill <- log(1 - VE2$cill)
 VE2$logor_ciul <- log(1 - VE2$ciul)
@@ -28,6 +36,8 @@ VE2$logse <- (VE2$logor_ciul - VE2$logor_cill) / (2 * qnorm(0.975))
 ## forest plots for vaccine effectiveness
 ```{r}
 VEres <- rma(yi = logor, sei = logse, method = "FE", data = VE)
+VEres_1<- rma(yi = logor, sei = logse, method = "FE", data = VE_1)
+
 VEres2 <- rma(yi = logor, sei = logse, method = "FE", data = VE2)
 
 vetransf <- function(x){
@@ -52,6 +62,27 @@ addpoly(VEres,
         transf = vetransf)
 abline(h = 1.5)
 dev.off()
+
+# 1 dose, removing the outlier
+png("./meta-analysis-figures/ve1_1.png", width = 8, height = 4, units = "in", res = 300)
+forest(VE_1$logor, 
+       ci.lb = VE_1$logor_cill, 
+       ci.ub = VE_1$logor_ciul, 
+       transf = vetransf, 
+       rows = (nrow(VE_1) + 1):2, 
+       ylim = c(0.5, 10),
+       header = c("Author(s), Year","VE [95% CI]"),
+       xlab = "Vaccine Effectiveness (VE)",
+       slab = paste(VE_1$trialname, VE_1$year, sep = ", "),
+       cex.main = 1,
+       main = "Effectiveness of one dose of mpox vaccine (VE) across 6 studies\n after removing an outlier"
+        )
+addpoly(VEres_1, 
+        row = 1, 
+        transf = vetransf)
+abline(h = 1.5)
+dev.off()
+
 #### 2-dose
 png("./meta-analysis-figures/ve2.png", width = 8, height = 4, units = "in", res = 300)
 forest(VE2$logor,

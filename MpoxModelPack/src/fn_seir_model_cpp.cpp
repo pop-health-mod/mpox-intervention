@@ -119,7 +119,7 @@ Rcpp::List fn_model_cpp(double bbeta_city,
   Rcpp::NumericVector N_ash_city = env["N_ash_city"];
   Rcpp::NumericVector psi_t_city = env["psi_t_city"];
   Rcpp::NumericVector upsilon_city = env["upsilon_city"];
-  Rcpp::NumericVector vartheta_city = env["vartheta_city"];
+  Rcpp::NumericVector vartheta_ash_city = env["vartheta_ash_city"];
   Rcpp::NumericMatrix mix_odds_ah_city = env["mix_odds_ah_city"];
   Rcpp::NumericMatrix mix_odds_s_city = env["mix_odds_s_city"];
   Rcpp::NumericMatrix init_prev_city = env["init_prev_city"];
@@ -294,8 +294,8 @@ Rcpp::List fn_model_cpp(double bbeta_city,
           double lambda_t_ash = bbeta_city * summation_t_ash;
           
           // disease natural history compartments
-          X[S][t][a][s][h] = X[S][t - 1][a][s][h] - ddt * (lambda_t_ash + psi_t * vartheta_city[a] / S_a_tm1) * X[S][t - 1][a][s][h];
-          X[V][t][a][s][h] = X[V][t - 1][a][s][h] + ddt * (psi_t * vartheta_city[a] * X[S][t - 1][a][s][h] / S_a_tm1 - iota * lambda_t_ash * X[V][t - 1][a][s][h]);
+          X[S][t][a][s][h] = X[S][t - 1][a][s][h] - ddt * (lambda_t_ash + psi_t * vartheta_ash_city[a * n_sa_cats * n_hiv_cats + s * n_hiv_cats + h] / S_a_tm1) * X[S][t - 1][a][s][h];
+          X[V][t][a][s][h] = X[V][t - 1][a][s][h] + ddt * (psi_t * vartheta_ash_city[a * n_sa_cats * n_hiv_cats + s * n_hiv_cats + h] * X[S][t - 1][a][s][h] / S_a_tm1 - iota * lambda_t_ash * X[V][t - 1][a][s][h]);
           X[E][t][a][s][h] = X[E][t - 1][a][s][h] + ddt * (lambda_t_ash * X[S][t - 1][a][s][h] + iota * lambda_t_ash * X[V][t - 1][a][s][h] - alpha * X[E][t - 1][a][s][h]);
           X[I][t][a][s][h] = X[I][t - 1][a][s][h] + ddt * ((1 - upsilon_t) * alpha * X[E][t - 1][a][s][h] - gamma1_city * X[I][t - 1][a][s][h]);
           X[J][t][a][s][h] = X[J][t - 1][a][s][h] + ddt * (upsilon_t * alpha * X[E][t - 1][a][s][h] - gamma2 * X[J][t - 1][a][s][h]);

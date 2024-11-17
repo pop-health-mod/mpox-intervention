@@ -20,6 +20,7 @@ prior_dens_fix_sen <- function(theta) {
 #' @param VE_llk vaccine effectiveness to run the calibration (for sensitivity analysis)
 #' @param contact_prop_llk proportion contact traced and isolated to run the calibration (for sensitivity analysis)
 #' @param contact_dur_llk days it takes for contact tracing (for sensitivity analysis)
+#' @param fixed_RR a vector of length two indicating the fixed RR values for the two groups
 #' @return a value equals to the log posterior density
 #' @rdname llk_all_sen
 #' @export 
@@ -28,7 +29,8 @@ llk_all_sen <- function(theta,
                 cal_cpp,
                 VE_llk,
                 contact_prop_llk,
-                contact_dur_llk) {
+                contact_dur_llk,
+                fixed_RR) {
   
   log_prior_fix <- prior_dens_fix_sen(theta)
   
@@ -58,8 +60,8 @@ llk_all_sen <- function(theta,
                              import_cases_city = imported_low + plogis(theta[index_city]) * (imported_upp - imported_low),
                              bbeta_city = plogis(theta[4]),
                              omega_city = plogis(theta[index_city + 5]) * 100,
-                             RR_H_city = 0.67,
-                             RR_L_city = 0.80,
+                             RR_H_city = fixed_RR[1],
+                             RR_L_city = fixed_RR[2],
                              gamma1_city = 1 / (3 + plogis(theta[5]) * (15 - 3)),
                              period_city = 150,
                              VACCINATING = 1,
@@ -130,7 +132,8 @@ simul_fun_all_sen <- function(cal_type,
                       cal_cpp,
                       VE_sim,
                       contact_prop_sim,
-                      contact_dur_sim) { 
+                      contact_dur_sim,
+                      fixed_RR_sim) { 
   
   # From the hessian, simulate the model
   vcova <- Matrix::solve(-hessian)
@@ -187,7 +190,8 @@ simul_fun_all_sen <- function(cal_type,
                     cal_cpp = cal_cpp,
                     VE_sim,
                     contact_prop_sim,
-                    contact_dur_sim)}
+                    contact_dur_sim,
+                    fixed_RR_sim)}
         )
       )
     } else {
@@ -202,7 +206,8 @@ simul_fun_all_sen <- function(cal_type,
             cal_cpp = cal_cpp,
             VE_sim,
             contact_prop_sim,
-            contact_dur_sim)}
+            contact_dur_sim,
+            fixed_RR_sim)}
       parallel::stopCluster(cl)
     }
     
@@ -277,8 +282,8 @@ simul_fun_all_sen <- function(cal_type,
                       bbeta_city = plogis(samp[s, 4]),
                       omega_city = plogis(samp[s, index_city + 5]) * 100,
                       period_city = period_mod_cty,
-                      RR_H_city = 0.67,
-                      RR_L_city = 0.80,
+                      RR_H_city = fixed_RR_sim[1],
+                      RR_L_city = fixed_RR_sim[2],
                       gamma1_city = 1 / (3 + plogis(samp[s, 5]) * (15 - 3)),
                       VACCINATING = 1,
                       TRACING = 1,
@@ -288,8 +293,8 @@ simul_fun_all_sen <- function(cal_type,
                                   bbeta_city = plogis(samp[s, 4]),
                                   omega_city = plogis(samp[s, index_city + 5]) * 100,
                                   period_city = period_mod_cty,
-                                  RR_H_city = 0.67,
-                                  RR_L_city = 0.80,
+                                  RR_H_city = fixed_RR_sim[1],
+                                  RR_L_city = fixed_RR_sim[2],
                                   gamma1_city = 1 / (3 + plogis(samp[s, 5]) * (15 - 3)),
                                   VACCINATING = 0,
                                   TRACING = 0,
@@ -321,8 +326,8 @@ simul_fun_all_sen <- function(cal_type,
                          bbeta_city = plogis(samp[s, 4]),
                          omega_city = plogis(samp[s, index_city + 5]) * 100,
                          period_city = period_mod_cty,
-                         RR_H_city = 0.67,
-                         RR_L_city = 0.80,
+                         RR_H_city = fixed_RR_sim[1],
+                         RR_L_city = fixed_RR_sim[2],
                          gamma1_city = 1 / (3 + plogis(samp[s, 5]) * (15 - 3)),
                          VACCINATING = 1,
                          TRACING = 0,
@@ -332,8 +337,8 @@ simul_fun_all_sen <- function(cal_type,
                          bbeta_city = plogis(samp[s, 4]),
                          omega_city = plogis(samp[s, index_city + 5]) * 100,
                          period_city = period_mod_cty,
-                         RR_H_city = 0.67,
-                         RR_L_city = 0.80,
+                         RR_H_city = fixed_RR_sim[1],
+                         RR_L_city = fixed_RR_sim[2],
                          gamma1_city = 1 / (3 + plogis(samp[s, 5]) * (15 - 3)),
                          VACCINATING = 0,
                          TRACING = 1,
@@ -452,20 +457,20 @@ simul_fun_all_sen <- function(cal_type,
                               lci = c(imported_low + plogis(par_ci$lower[index_city]) * (imported_upp - imported_low),
                                       plogis(par_ci$lower[4]),
                                       plogis(par_ci$lower[index_city + 5]) * 100, 
-                                      0.67, 
-                                      0.80, 
+                                      fixed_RR_sim[1], 
+                                      fixed_RR_sim[2], 
                                       3 + plogis(par_ci$lower[5]) * (15 - 3)),
                               med = c(imported_low + plogis(par_ci$med[index_city]) * (imported_upp - imported_low),
                                       plogis(par_ci$med[4]),
                                       plogis(par_ci$med[index_city + 5]) * 100, 
-                                      0.67, 
-                                      0.80, 
+                                      fixed_RR_sim[1], 
+                                      fixed_RR_sim[2], 
                                       3 + plogis(par_ci$med[5]) * (15 - 3)),
                               uci = c(imported_low + plogis(par_ci$upper[index_city]) * (imported_upp - imported_low),
                                       plogis(par_ci$upper[4]),
                                       plogis(par_ci$upper[index_city + 5]) * 100, 
-                                      0.67,
-                                      0.80,
+                                      fixed_RR_sim[1], 
+                                      fixed_RR_sim[2], 
                                       3 + plogis(par_ci$upper[5]) * (15 - 3)))
     posterior_AF_ci[[cty]] <-  data.frame(names = c("behavourial change", 
                                              "first-dose vaccination", 

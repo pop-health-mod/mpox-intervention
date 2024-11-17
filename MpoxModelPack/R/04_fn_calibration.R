@@ -23,6 +23,7 @@ prior_dens_fix <- function(theta) {
 #' @param VE_llk vaccine effectiveness to run the calibration (for sensitivity analysis)
 #' @param contact_prop_llk proportion contact traced and isolated to run the calibration (for sensitivity analysis)
 #' @param contact_dur_llk days it takes for contact tracing (for sensitivity analysis)
+#' @param if_prioritized_vac_llk days if or not only vaccinated groups with conatct rate above median in a city (for sensitivity analysis)
 #' @return a value equals to the log posterior density
 #' @rdname llk_all
 #' @export 
@@ -31,7 +32,8 @@ llk_all <- function(theta,
                 cal_cpp,
                 VE_llk,
                 contact_prop_llk,
-                contact_dur_llk) {
+                contact_dur_llk,
+                if_prioritized_vac_llk) {
   
   log_prior_fix <- prior_dens_fix(theta)
   
@@ -52,9 +54,11 @@ llk_all <- function(theta,
                 type = cal_type)
     
     # load model parameter of the selected cities
-    load.params.fn(VE_llk, 
-                   contact_prop_llk,
-                   contact_dur_llk)
+    load.params.fn(VE = VE_llk,
+                   contact_prop = contact_prop_llk,
+                   contact_dur = contact_dur_llk,
+                   standardized_vaccine_date = F,
+                   prioritized_vaccine = if_prioritized_vac_llk)
     
     # change parameters to be calibrated in the function input
     model_output <- fn_model(city = cal_city,
@@ -122,6 +126,7 @@ getci <- function(df) {
 #' @param contact_prop_sim proportion contact traced and isolated to run the calibration (for sensitivity analysis)
 #' @param contact_dur_sim days it takes for contact tracing to run the calibration (for sensitivity analysis)
 #' @param standardized_vaccine_date_sim whether or not standardizing vaccination start dates across the cities (for sensitivity analysis)
+#' @param if_prioritized_vac_sim whether or not prioritizing vaccination in a city (for sensitivity analysis)
 #' @return a list of result (model fit for each parameter sets), par_ci (posterior CrI for parameters), AF_ci (posterior CrI of averted fractions), samples (all resampled parameter sets)
 #' @seealso 
 #'  \code{\link[Matrix]{solve-methods}}, \code{\link[Matrix]{nearPD}}
@@ -151,7 +156,8 @@ simul_fun_all <- function(cal_type,
                       VE_sim,
                       contact_prop_sim,
                       contact_dur_sim,
-                      standardized_vaccine_date_sim
+                      standardized_vaccine_date_sim,
+                      if_prioritized_vac_sim
                       ) { 
   
   # From the hessian, simulate the model
@@ -209,7 +215,9 @@ simul_fun_all <- function(cal_type,
                     cal_cpp = cal_cpp,
                     VE_sim,
                     contact_prop_sim,
-                    contact_dur_sim)}
+                    contact_dur_sim,
+                    if_prioritized_vac_sim
+                    )}
         )
       )
     } else {
@@ -224,7 +232,8 @@ simul_fun_all <- function(cal_type,
             cal_cpp = cal_cpp,
             VE_sim,
             contact_prop_sim,
-            contact_dur_sim)}
+            contact_dur_sim,
+            if_prioritized_vac_sim)}
       parallel::stopCluster(cl)
     }
     
@@ -267,7 +276,8 @@ simul_fun_all <- function(cal_type,
     load.params.fn(VE_sim,
                    contact_prop_sim,
                    contact_dur_sim,
-                   standardized_vaccine_date_sim) 
+                   standardized_vaccine_date_sim,
+                   if_prioritized_vac_sim) 
     
     # reruning the model covering longer period
     period_mod_cty <- ifelse(cty == "mtl", 150, ifelse(cty == "trt", 170, 160))
