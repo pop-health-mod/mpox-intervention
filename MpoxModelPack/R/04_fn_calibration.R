@@ -4,7 +4,6 @@
 #' @param theta value of a vector of parameter in logit scale 
 #' @return a value equals to log prior density
 #' @rdname prior_dens_fix
-#' @importFrom foreach %dopar%
 #' @export 
 prior_dens_fix <- function(theta) {
   log_prior <- dnorm(theta[4], mean = qlogis(0.87), sd = 1, log = TRUE) + # beta (transmission parameter)
@@ -143,6 +142,7 @@ getci <- function(df) {
 #' @importFrom doParallel registerDoParallel
 #' @importFrom Rcpp sourceCpp
 #' @importFrom foreach foreach
+#' @importFrom foreach %dopar%
 simul_fun_all <- function(cal_type,
                       hessian, 
                       thetas, 
