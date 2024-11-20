@@ -1,7 +1,11 @@
 # author: Fanyu Xiu
 library(tidyverse)
 cal_cities <- c("mtl", "trt", "van")
-cal_analysis <- c("main", "RR_in", "contact_15", "contact_10", "VE_lb", "VE_ub", "standardized_vaccine_date")
+cal_analysis <- c("main", 
+                  "RR_in", "RR_1",
+                  "contact_15", "contact_10", 
+                  "VE_lb", "VE_ub", "standardized_vaccine_date",
+                  "VE_1", "prioritize_vaccine")
 data_results_list <- list()
 
 for(analysis in cal_analysis){
@@ -14,9 +18,14 @@ all_results <- do.call(rbind.data.frame, c(data_results_list, make.row.names = F
   mutate(analysis = case_when(analysis == "contact_10" ~ "contract traced 10%",
                               analysis == "contact_15" ~ "contract traced 15%",
                               analysis == "RR_in" ~ "informative prior for RR",
-                              analysis == "standardized_vaccine_date" ~ "same vaccination start relative to cases",
+                              analysis == "RR_1" ~ "unchanged RR",
+                               analysis == "standardized_vaccine_date" ~ "same vaccination start relative to cases",
+                              analysis == "prioritize_vaccine" ~ "vaccinated only those with partner numbers > median",
+                              
                               analysis == "VE_lb" ~ "use VE lower 95% CI",
                               analysis == "VE_ub" ~ "use VE upper 95% CI",
+                              analysis == "VE_1" ~ "remove the lowest VE estimate",
+                              
                               analysis == "main" ~ "main"),
          name = factor(name, 
                        levels = c("imported cases (tau)",
@@ -32,10 +41,13 @@ all_results <- do.call(rbind.data.frame, c(data_results_list, make.row.names = F
                          "behavourial change and first-dose vaccination",
                          "contact tracing and first-dose vaccination", 
                          "all three combined")), 
-         analysis = factor(analysis, levels = c("main", "informative prior for RR", 
+         analysis = factor(analysis, levels = c("main", "informative prior for RR", "unchanged RR",
+                                                
                                                 "contract traced 10%", "contract traced 15%",
                                                 "use VE lower 95% CI", "use VE upper 95% CI",
-                                                "same vaccination start relative to cases"))) %>% 
+                                                "remove the lowest VE estimate",
+                                                "same vaccination start relative to cases",
+                                                "vaccinated only those with partner numbers > median"))) %>% 
   mutate(AF = as.logical(name %in% c("behavourial change", "contact tracing", "first-dose vaccination", 
                                      "behavourial change and contact tracing",
                                      "behavourial change and first-dose vaccination",

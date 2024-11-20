@@ -2,8 +2,12 @@
 library(MpoxModelPack)
 library(tidyverse)
 cal_cities <- c("mtl", "trt", "van")
-# plot_analysis <- c("main", "contact_15", "contact_10", "VE_lb", "VE_ub", "RR_in")
-plot_analysis <- "main"
+plot_analysis <- c("main",
+"RR_in", "RR_1",
+"contact_15", "contact_10", 
+"VE_lb", "VE_ub", "standardized_vaccine_date",
+"VE_1", "prioritize_vaccine")[c(3,9,10)]
+# plot_analysis <- "main"
 
 # reported case data
 init.pop.fn(cal_cities, 1)
