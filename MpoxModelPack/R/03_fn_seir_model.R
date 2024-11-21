@@ -42,9 +42,10 @@
     end_city <- unname(days_imported_city + period_city)
     niter_city <- (end_city - sstart) / ddt + 1;
     N_city <- N[[city]]
-
+    
     # double
     report_frac_city <- report_frac[[city]]
+    bar_city <- unname(bar[city])
     
     # NumericVector
     N_ash_city <- N_ash[[city]] # now array, to be converted into vector if use Rcpp
@@ -63,10 +64,15 @@
     ### initial prevalence in each compartment by {a,s,h}
     init_prev_city <- init_prev[[city]] 
     
-    # pre-compute relative contact rates (array)
-    RR_ash_city <- ifelse(c_ash_city > (7/180), 
-                          RR_H_city, 
-                          RR_L_city)
+    # pre-compute contact rates (array)  during period when RR < 1
+    c_ash_RR_city <- ifelse(c_ash_city > (7/180), 
+                          RR_H_city * c_ash_city, 
+                          RR_L_city * c_ash_city)
+    
+    ## during period when RR < 1, reassign values to vartheta based on the updated contact rate
+    vartheta_ash_RR_city <- ifelse(c_ash_RR_city > bar_city, 
+                                   vartheta_ash_city,
+                                0)
     
     ## import cases as per fraction of only certain age groups (based on case data)
     and <- which(names_age_cats %in% c("30-39"))
@@ -89,19 +95,23 @@
    # if code in Rcpp, convert all arrays into vector/matrix
    c_ash_city <- as.data.frame.table(c_ash_city)
    colnames(c_ash_city) <- c("age", "sa", "hiv", "c_ash")
+   c_ash_RR_city <- as.data.frame.table(c_ash_RR_city)
+   colnames(c_ash_RR_city) <- c("age", "sa", "hiv", "c_ash_RR")
    N_ash_city <- as.data.frame.table(N_ash_city)
    colnames(N_ash_city) <- c("age", "sa", "hiv", "N_ash")
    vartheta_ash_city <- as.data.frame.table(vartheta_ash_city)
    colnames(vartheta_ash_city) <- c("age", "sa", "hiv", "vartheta_ash")
-   RR_ash_city <- as.data.frame.table(RR_ash_city)
-   colnames(RR_ash_city) <- c("age", "sa", "hiv", "RR_ash")
+   vartheta_ash_RR_city<- as.data.frame.table(vartheta_ash_RR_city)
+   colnames(vartheta_ash_RR_city) <- c("age", "sa", "hiv", "vartheta_ash_RR")
    
    mega_ash_city <- merge(c_ash_city, 
-                       N_ash_city)
+                          c_ash_RR_city)
+   mega_ash_city <- merge(mega_ash_city, 
+                          N_ash_city)
    mega_ash_city <- merge(mega_ash_city,
                           vartheta_ash_city)
    mega_ash_city <- merge(mega_ash_city,
-                       RR_ash_city)
+                          vartheta_ash_RR_city)
    
    for(comp in names_comp){
      init_prev_city[[comp]] <- as.data.frame.table(init_prev_city[[comp]])
@@ -110,9 +120,10 @@
      init_prev_city[[comp]] <- NULL
    }
    c_ash_city <- mega_ash_city$c_ash
+   c_ash_RR_city <- mega_ash_city$c_ash_RR
    N_ash_city <- mega_ash_city$N_ash
    vartheta_ash_city <- mega_ash_city$vartheta_ash
-   RR_ash_city <- mega_ash_city$RR_ash
+   vartheta_ash_RR_city <- mega_ash_city$vartheta_ash_RR
    init_prev_city <- as.matrix(mega_ash_city[, names_comp])
    
    # import to global environment
@@ -122,12 +133,13 @@
                        niter_city = niter_city,
                        report_frac_city = report_frac_city,
                        N_city =  N_city,
-                       RR_ash_city = RR_ash_city,
                        N_ash_city =  N_ash_city,
                        c_ash_city = c_ash_city,
+                       c_ash_RR_city = c_ash_RR_city,
                        psi_t_city =  psi_t_city,
                        upsilon_city = upsilon_city,
                        vartheta_ash_city = vartheta_ash_city,
+                       vartheta_ash_RR_city = vartheta_ash_RR_city,
                        mix_odds_ah_city = mix_odds_ah_city,
                        mix_odds_s_city = mix_odds_s_city,
                        init_prev_city = init_prev_city
@@ -139,9 +151,6 @@
    
    # run model with rcpp using set of variable parameters
    output_t <- fn_model_cpp(bbeta_city = bbeta_city, 
-                            omega_city = omega_city,
-                            RR_H_city = RR_H_city,
-                            RR_L_city = RR_L_city,
                             gamma1_city = gamma1_city,
                             TRACING = TRACING,
                             VACCINATING = VACCINATING)
@@ -221,11 +230,13 @@
                           0)
 
       # contact relative rates
-      ifelse(
-        (day_index >= days_imported_city &
-        day_index <= days_imported_city + days_RR_city),
-        c_ash_city_t <- c_ash_city * RR_ash_city, 
-        c_ash_city_t <- c_ash_city)
+      if((day_index >= days_imported_city &
+        day_index <= days_imported_city + days_RR_city)){
+        c_ash_city_t <- c_ash_RR_city
+        vartheta_ash_city_t <- vartheta_ash_RR_city}else{
+        c_ash_city_t <- c_ash_city
+        vartheta_ash_city_t <- vartheta_ash_city
+        }
 
       # compute the time-varying mixing matrix
       n_ash_t <- N_ash_city - X["J", t-1, , , ]   # non-isolating pop by {a,s,h}
@@ -254,6 +265,10 @@
       
       
       for (a in names_age_cats){
+        
+       ind_vaccine_included <- (which(vartheta_ash_city_t[a, , ]) > 0)
+       S_a_tm1 <- sum(X["S", t - 1, a, , ][ind_vaccine_included]) 
+        
         for (s in names_sa_cats){
           for (h in names_hiv_cats){
             
@@ -262,8 +277,8 @@
             lambda_t_ash <- bbeta_city * sum(mix_ash6c[a,s,h,,,] * prev_apsphp)
 
       # disease natural history compartments
-      X["S", t, a, s, h] <- X["S", t - 1, a, s, h] - ddt * (lambda_t_ash + psi_t * vartheta_ash_city[a, s, h] / sum(X["S", t - 1, a, , ])) * X["S", t - 1, a, s, h] 
-      X["V", t, a, s, h] <- X["V", t - 1, a, s, h] + ddt * (psi_t * vartheta_ash_city[a, s, h] * X["S", t - 1, a, s, h] / sum(X["S", t - 1, a, , ]) - iota * lambda_t_ash * X["V", t - 1, a, s, h])
+      X["S", t, a, s, h] <- X["S", t - 1, a, s, h] - ddt * (lambda_t_ash + psi_t * vartheta_ash_city_t[a, s, h] / S_a_tm1) * X["S", t - 1, a, s, h] 
+      X["V", t, a, s, h] <- X["V", t - 1, a, s, h] + ddt * (psi_t * vartheta_ash_city_t[a, s, h] * X["S", t - 1, a, s, h] / S_a_tm1 - iota * lambda_t_ash * X["V", t - 1, a, s, h])
       X["E", t, a, s, h] <- X["E", t - 1, a, s, h] + ddt * (lambda_t_ash * X["S", t - 1, a, s, h] + iota * lambda_t_ash * X["V", t - 1, a, s, h] - alpha * X["E", t - 1, a, s, h])
       X["I", t, a, s, h] <- X["I", t - 1, a, s, h] + ddt * ((1 - upsilon_t) * alpha * X["E", t - 1, a, s, h] - gamma1_city * X["I", t - 1, a, s, h])
       X["J", t, a, s, h] <- X["J", t - 1, a, s, h] + ddt * (upsilon_t * alpha * X["E", t - 1, a, s, h] - gamma2 * X["J", t - 1, a, s, h])

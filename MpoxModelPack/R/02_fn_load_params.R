@@ -77,6 +77,12 @@ load.params.fn <- function(VE = 0.5149,
   pars$ddt <- 0.25
   pars$sstart <- 0
   
+  # vaccination threshold in terms of partner numbers in each city
+  pars$bar <- vector()
+  ifelse(prioritized_vaccine,
+         pars$bar <- c("mtl"=2, "trt"=3, "van"=3) / 180,
+         pars$bar <- c("mtl"=0, "trt"=0, "van"=0) / 180)
+  
   ### first dose vaccinations and cases data
   for(city in CITIES){
 
@@ -152,25 +158,24 @@ load.params.fn <- function(VE = 0.5149,
                                     `60+` = 0.14575)
            ))
     
-    
+    ### if select prioritized vaccination, this variable will be assigned 0 if the contact rate of an ash group <= median in each city (bar[city])
+    ### this is when assuming no change in RR
+    ### when there is change in RR, proportion will be based on the variable vartheta_ash_RR_city as defined in the function file
     pars$vartheta_ash[[city]] <- array(rep(vartheta_age, pars$n_sa_cats * pars$n_age_cats * pars$n_hiv_cats), 
                                        dim = c(pars$n_age_cats, pars$n_sa_cats, pars$n_hiv_cats),
                                        dimnames = list(pars$names_age_cats, pars$names_sa_cats, pars$names_hiv_cats)
     )
     
-    if(prioritized_vaccine){
-      bar_city <- ifelse(city == "mtl", 2, 
-                         ifelse(city == "trt", 3, 3)) / 180
-      
+   
       for(a in pars$names_age_cats){
         for(s in pars$names_sa_cats){
           for(h in pars$names_hiv_cats){
-            if(pars$c_ash[[city]][a, s, h] < bar_city){
-              # only vaccinated to groups with partne numbers > bar
+            if(pars$c_ash[[city]][a, s, h] <= pars$bar[city]){
+              # only vaccinated to groups with partner numbers > bar
               pars$vartheta_ash[[city]][a, s, h] <- 0} 
             
           }}}
-    }
+    
     
     
     

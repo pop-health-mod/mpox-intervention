@@ -84,19 +84,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // fn_model_cpp
-Rcpp::List fn_model_cpp(double bbeta_city, double omega_city, double RR_H_city, double RR_L_city, double gamma1_city, bool TRACING, bool VACCINATING);
-RcppExport SEXP _MpoxModelPack_fn_model_cpp(SEXP bbeta_citySEXP, SEXP omega_citySEXP, SEXP RR_H_citySEXP, SEXP RR_L_citySEXP, SEXP gamma1_citySEXP, SEXP TRACINGSEXP, SEXP VACCINATINGSEXP) {
+Rcpp::List fn_model_cpp(double bbeta_city, double gamma1_city, bool TRACING, bool VACCINATING);
+RcppExport SEXP _MpoxModelPack_fn_model_cpp(SEXP bbeta_citySEXP, SEXP gamma1_citySEXP, SEXP TRACINGSEXP, SEXP VACCINATINGSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< double >::type bbeta_city(bbeta_citySEXP);
-    Rcpp::traits::input_parameter< double >::type omega_city(omega_citySEXP);
-    Rcpp::traits::input_parameter< double >::type RR_H_city(RR_H_citySEXP);
-    Rcpp::traits::input_parameter< double >::type RR_L_city(RR_L_citySEXP);
     Rcpp::traits::input_parameter< double >::type gamma1_city(gamma1_citySEXP);
     Rcpp::traits::input_parameter< bool >::type TRACING(TRACINGSEXP);
     Rcpp::traits::input_parameter< bool >::type VACCINATING(VACCINATINGSEXP);
-    rcpp_result_gen = Rcpp::wrap(fn_model_cpp(bbeta_city, omega_city, RR_H_city, RR_L_city, gamma1_city, TRACING, VACCINATING));
+    rcpp_result_gen = Rcpp::wrap(fn_model_cpp(bbeta_city, gamma1_city, TRACING, VACCINATING));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -108,7 +105,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MpoxModelPack_outer_cpp", (DL_FUNC) &_MpoxModelPack_outer_cpp, 2},
     {"_MpoxModelPack_ipf_cpp", (DL_FUNC) &_MpoxModelPack_ipf_cpp, 4},
     {"_MpoxModelPack_apply_mix_odds_cpp", (DL_FUNC) &_MpoxModelPack_apply_mix_odds_cpp, 3},
-    {"_MpoxModelPack_fn_model_cpp", (DL_FUNC) &_MpoxModelPack_fn_model_cpp, 7},
+    {"_MpoxModelPack_fn_model_cpp", (DL_FUNC) &_MpoxModelPack_fn_model_cpp, 4},
     {NULL, NULL, 0}
 };
 

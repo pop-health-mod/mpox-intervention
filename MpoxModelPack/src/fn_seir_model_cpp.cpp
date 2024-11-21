@@ -88,12 +88,9 @@ Rcpp::NumericMatrix apply_mix_odds_cpp(Rcpp::NumericMatrix M0,
 
 // [[Rcpp::export]]
 Rcpp::List fn_model_cpp(double bbeta_city, 
-                            double omega_city,
-                            double RR_H_city,
-                            double RR_L_city,
                             double gamma1_city,
-                            bool TRACING = 1,
-                            bool VACCINATING = 1) {
+                            bool TRACING,
+                            bool VACCINATING) {
   
   // ---- Set-Up ----
   
@@ -114,12 +111,13 @@ Rcpp::List fn_model_cpp(double bbeta_city,
   double alpha = env["alpha"];
   double gamma2 = env["gamma2"];
   double report_delay = env["report_delay"];
-  Rcpp::NumericVector RR_ash_city = env["RR_ash_city"];
   Rcpp::NumericVector c_ash_city = env["c_ash_city"];
+  Rcpp::NumericVector c_ash_RR_city = env["c_ash_RR_city"];
   Rcpp::NumericVector N_ash_city = env["N_ash_city"];
   Rcpp::NumericVector psi_t_city = env["psi_t_city"];
   Rcpp::NumericVector upsilon_city = env["upsilon_city"];
   Rcpp::NumericVector vartheta_ash_city = env["vartheta_ash_city"];
+  Rcpp::NumericVector vartheta_ash_RR_city = env["vartheta_ash_RR_city"];
   Rcpp::NumericMatrix mix_odds_ah_city = env["mix_odds_ah_city"];
   Rcpp::NumericMatrix mix_odds_s_city = env["mix_odds_s_city"];
   Rcpp::NumericMatrix init_prev_city = env["init_prev_city"];
@@ -204,13 +202,15 @@ Rcpp::List fn_model_cpp(double bbeta_city,
           /// minus people in J since they are isolated so unable to mix with others
           n_ash_t[a][s][h] = N_ash_city[a * n_sa_cats * n_hiv_cats + s * n_hiv_cats + h] - X[J][t - 1][a][s][h];
           
-          /// contact rate at t for a,s,h
+          /// contact rate at t for a,s,h 
           double c_ash_city_t;
-          c_ash_city_t = c_ash_city[a * n_sa_cats * n_hiv_cats + s * n_hiv_cats + h];
+         
           if(day_index >= days_imported_city && day_index <= days_imported_city + days_RR_city){ 
-              c_ash_city_t =  c_ash_city_t * RR_ash_city[a * n_sa_cats * n_hiv_cats + s * n_hiv_cats + h];
-            }
-          
+            c_ash_city_t = c_ash_RR_city[a * n_sa_cats * n_hiv_cats + s * n_hiv_cats + h];
+          }else{
+            c_ash_city_t = c_ash_city[a * n_sa_cats * n_hiv_cats + s * n_hiv_cats + h];
+            
+          }
           /// total contacts
             x_ash_t[a][s][h] = n_ash_t[a][s][h] * c_ash_city_t;
           }}}
@@ -277,7 +277,17 @@ Rcpp::List fn_model_cpp(double bbeta_city,
       double S_a_tm1 = 0; 
       for(int sp = 0; sp != n_sa_cats; ++sp){
             for(int hp = 0; hp != n_hiv_cats; ++hp){
-              S_a_tm1 += X[S][t - 1][a][sp][hp];}}
+              double vartheta_asphp_city_t;
+              /// proportion of vaccination by age at t for a,sp,hp
+              if(day_index >= days_imported_city && day_index <= days_imported_city + days_RR_city){ 
+                vartheta_asphp_city_t = vartheta_ash_RR_city[a * n_sa_cats * n_hiv_cats + sp * n_hiv_cats + hp];
+              }else{
+                vartheta_asphp_city_t = vartheta_ash_city[a * n_sa_cats * n_hiv_cats + sp * n_hiv_cats + hp];
+              }
+              
+              if(vartheta_asphp_city_t > 0){
+              S_a_tm1 += X[S][t - 1][a][sp][hp];} // only add to the total number of people vaccinated if vartheta not pre assigned == 0
+              }}
        
       for(int s = 0; s != n_sa_cats; ++s){
         for(int h = 0; h != n_hiv_cats; ++h){
@@ -292,10 +302,14 @@ Rcpp::List fn_model_cpp(double bbeta_city,
 
           // calculate lambda_t_ash
           double lambda_t_ash = bbeta_city * summation_t_ash;
+          double vartheta_ash_city_t;
+          if(day_index >= days_imported_city && day_index <= days_imported_city + days_RR_city){ 
+             vartheta_ash_city_t = vartheta_ash_RR_city[a * n_sa_cats * n_hiv_cats + s * n_hiv_cats + h];}else{
+             vartheta_ash_city_t = vartheta_ash_city[a * n_sa_cats * n_hiv_cats + s * n_hiv_cats + h];}
           
           // disease natural history compartments
-          X[S][t][a][s][h] = X[S][t - 1][a][s][h] - ddt * (lambda_t_ash + psi_t * vartheta_ash_city[a * n_sa_cats * n_hiv_cats + s * n_hiv_cats + h] / S_a_tm1) * X[S][t - 1][a][s][h];
-          X[V][t][a][s][h] = X[V][t - 1][a][s][h] + ddt * (psi_t * vartheta_ash_city[a * n_sa_cats * n_hiv_cats + s * n_hiv_cats + h] * X[S][t - 1][a][s][h] / S_a_tm1 - iota * lambda_t_ash * X[V][t - 1][a][s][h]);
+          X[S][t][a][s][h] = X[S][t - 1][a][s][h] - ddt * (lambda_t_ash + psi_t * vartheta_ash_city_t / S_a_tm1) * X[S][t - 1][a][s][h];
+          X[V][t][a][s][h] = X[V][t - 1][a][s][h] + ddt * (psi_t * vartheta_ash_city_t * X[S][t - 1][a][s][h] / S_a_tm1 - iota * lambda_t_ash * X[V][t - 1][a][s][h]);
           X[E][t][a][s][h] = X[E][t - 1][a][s][h] + ddt * (lambda_t_ash * X[S][t - 1][a][s][h] + iota * lambda_t_ash * X[V][t - 1][a][s][h] - alpha * X[E][t - 1][a][s][h]);
           X[I][t][a][s][h] = X[I][t - 1][a][s][h] + ddt * ((1 - upsilon_t) * alpha * X[E][t - 1][a][s][h] - gamma1_city * X[I][t - 1][a][s][h]);
           X[J][t][a][s][h] = X[J][t - 1][a][s][h] + ddt * (upsilon_t * alpha * X[E][t - 1][a][s][h] - gamma2 * X[J][t - 1][a][s][h]);

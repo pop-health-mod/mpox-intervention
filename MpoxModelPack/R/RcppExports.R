@@ -25,7 +25,7 @@ apply_mix_odds_cpp <- function(M0, OR, tol = 1e-12) {
     .Call('_MpoxModelPack_apply_mix_odds_cpp', PACKAGE = 'MpoxModelPack', M0, OR, tol)
 }
 
-fn_model_cpp <- function(bbeta_city, omega_city, RR_H_city, RR_L_city, gamma1_city, TRACING = 1L, VACCINATING = 1L) {
-    .Call('_MpoxModelPack_fn_model_cpp', PACKAGE = 'MpoxModelPack', bbeta_city, omega_city, RR_H_city, RR_L_city, gamma1_city, TRACING, VACCINATING)
+fn_model_cpp <- function(bbeta_city, gamma1_city, TRACING, VACCINATING) {
+    .Call('_MpoxModelPack_fn_model_cpp', PACKAGE = 'MpoxModelPack', bbeta_city, gamma1_city, TRACING, VACCINATING)
 }
 
