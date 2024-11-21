@@ -33,7 +33,11 @@ data_xval <- rbind(data_xval_prop_case_age,
 
 
 
-cal_analysis <- c("main", "RR_in", "contact_15", "contact_10", "VE_lb", "VE_ub", "standardized_vaccine_date")
+cal_analysis <- c("main",
+                  "RR_in", "RR_1",
+                  "contact_15", "contact_10", 
+                  "VE_lb", "VE_ub", "standardized_vaccine_date",
+                  "VE_1", "prioritize_vaccine")[c(3,9,10)]
 for(analysis in cal_analysis){
 data_mod_fit <- readRDS(sprintf("./out/%s/data_mod_fit.rds", analysis)) %>% 
   mutate(city_name = case_when(city_name == "Montréal" ~ "Panel A): Montréal",
