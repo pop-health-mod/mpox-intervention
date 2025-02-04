@@ -95,6 +95,7 @@ load.params.fn <- function(VE = 0.5149,
     pars$case_city[[city]]$incidence <- pars$case_city[[city]]$city_cases # city
     
     ## format date 
+    pars$psi_before_first_reported_case <- 0
     pars$case_city[[city]]$date <- as.Date(pars$case_city[[city]]$date)
     ifelse(standardized_vaccine_date,
            pars$psi_t[[city]] <- pars$case_city[[city]]$first_doses_standardized, 
@@ -103,7 +104,7 @@ load.params.fn <- function(VE = 0.5149,
     # proportion of isolated on a specific day
     pars$upsilon[[city]] <- c(rep(0, pars$days_imported[city]),
                               rep(contact_prop * pars$report_frac[city] * pexp(q = 2 + contact_dur, rate = 1/5.1, lower.tail = F), 
-                                  200))
+                                  400))
     
     # add city MSM population (accounted for ceiling when dividing into strata)
     # and contact rate (used to estimate force of infection, lambda)
@@ -118,8 +119,8 @@ load.params.fn <- function(VE = 0.5149,
           dim = c(pars$n_age_cats, pars$n_sa_cats, pars$n_hiv_cats),
           dimnames = list(pars$names_age_cats, pars$names_sa_cats, pars$names_hiv_cats))}
     
-    # S compartment initial population
-    init_prev[[city]][["S"]] <- pop_dat[[city]]$n_pop - init_prev[[city]][["I"]] - init_prev[[city]][["E"]]
+    # S compartment initial population (before case importation)
+    init_prev[[city]][["S"]] <- pop_dat[[city]]$n_pop # equals to the population at the beginning
     
     # age-hiv odds, unique to each city
     OR5 = matrix(0, pars$n_age_cats, pars$n_age_cats) # age

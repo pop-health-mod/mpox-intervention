@@ -3,6 +3,7 @@
   #' @description Loads the model function 
   #' @param city model one city at a time: "mtl" = Montreal, "trt" = Toronto, "van" = Vancouver
   #' @param import_cases_city number of imported cases
+  #' @param imported_age_groups age groups among which imported cases were distributed
   #' @param bbeta_city transmission probability per effective contact
   #' @param omega_city mixing parameters assortativity odds ratio scale
   #' @param sd_city mixing parameters standard deviation
@@ -18,6 +19,7 @@
   #' @export 
   fn_model <- function(city,
                        import_cases_city,
+                       imported_age_groups = "30-39",
                        bbeta_city, 
                        omega_city, 
                        sd_city = 2,
@@ -50,7 +52,9 @@
     # NumericVector
     N_ash_city <- N_ash[[city]] # now array, to be converted into vector if use Rcpp
     c_ash_city <- c_ash[[city]] # now array, to be converted into vector if use Rcpp
-    psi_t_city <- psi_t[[city]]
+    psi_t_city <- c(rep(psi_before_first_reported_case,
+                        days_imported[city]),
+                    psi_t[[city]])
     upsilon_city <- unname(upsilon[[city]])
     vartheta_ash_city <- vartheta_ash[[city]] # now array, to be converted into vector if use Rcpp
     
@@ -75,7 +79,7 @@
                                 0)
     
     ## import cases as per fraction of only certain age groups (based on case data)
-    and <- which(names_age_cats %in% c("30-39"))
+    and <- which(names_age_cats %in% imported_age_groups)
     ## in the 5% highest activity group
     ind <- unname(which(cumsum(apply(N_ash_city, 2, sum) / N_city) >= 0.95)) # apply(N_ash_city, 2, sum) is N_s_city
     
@@ -85,10 +89,12 @@
         for(s in names_sa_cats[ind]){
           for(h in names_hiv_cats){
             ### divide by 2 since allocating the cases to E and I compartments equally
-            init_prev_city[[comp]][a, s, h] <- import_cases_city / 2 * N_ash_city[a, s, h] / sum(N_ash_city[and, ind, ])
+            ### allocate according to the susceptible size of a group (ash) relative to the population
+            init_prev_city[[comp]][a, s, h] <- init_prev_city[[comp]][a, s, h] + 
+              import_cases_city / 2 * init_prev_city[["S"]][a, s, h] / sum(init_prev_city[["S"]][and, ind, ])
           }}}}
     ### S compartment initial population after case importation
-    init_prev_city[["S"]] <- N_ash_city - init_prev_city[["I"]] - init_prev_city[["E"]]
+    init_prev_city[["S"]] <- init_prev_city[["S"]] - init_prev_city[["E"]] - init_prev_city[["I"]]
     
     
  if(cpp){
@@ -131,6 +137,7 @@
                        days_RR_city = days_RR_city,
                        end_city = end_city,
                        niter_city = niter_city,
+                       psi_before_first_reported_case = psi_before_first_reported_case,
                        report_frac_city = report_frac_city,
                        N_city =  N_city,
                        N_ash_city =  N_ash_city,
@@ -215,7 +222,7 @@
     # iterate model over time sequence (using Euler algorithm)
     for (t in 2:niter_city){
       ## extract % vaccinated people per time step depending on the day
-      ## start from 0, corresponding to time_conti in PHAC case data
+      ## start from 0, corresponding to time_intro in PHAC case data
       day_index <- floor(ddt * (t - 1)) 
       max_day_data <- length(psi_t_city)
       psi_t <- ifelse(VACCINATING, 
@@ -223,7 +230,7 @@
                              psi_t_city[max_day_data],
                              psi_t_city[day_index + 1]),
                       0)
-
+      
       # extract % isolated people per time step depending on the day
       upsilon_t <- ifelse(TRACING,
                           upsilon_city[day_index + 1],
@@ -284,7 +291,7 @@
       X["J", t, a, s, h] <- X["J", t - 1, a, s, h] + ddt * (upsilon_t * alpha * X["E", t - 1, a, s, h] - gamma2 * X["J", t - 1, a, s, h])
       X["R", t, a, s, h] <- X["R", t - 1, a, s, h] + ddt * (gamma1_city * X["I", t - 1, a, s, h] + gamma2 * X["J", t - 1, a, s, h])
 
-      # cases that become infectious (symptomatic or not)
+      # cases that become infectious
       X["CS", t, a, s, h] <-  X["CS", t - 1, a, s, h] + ddt * (alpha * X["E", t - 1, a, s, h] - report_delay * X["CS", t - 1, a, s, h]) 
       # cases that are reported
       X["CR", t, a, s, h] <-  X["CR", t - 1, a, s, h] + ddt * (report_frac_city * report_delay * X["CS", t - 1, a, s, h]) 

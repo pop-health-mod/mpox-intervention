@@ -165,7 +165,7 @@ Rcpp::List fn_model_cpp(double bbeta_city,
   for( int t = 1; t != niter_city; ++t ){
     
     // extract % vaccinated people per time step depending on the day
-    // start from 0, corresponding to time_conti in PHAC case data
+    // start from 0, corresponding to time_intro in PHAC case data
     int day_index = std::floor(ddt * t); 
     int max_day_data = psi_t_city.length();
     double psi_t;
@@ -322,6 +322,22 @@ Rcpp::List fn_model_cpp(double bbeta_city,
           cases_t[t] += report_frac_city * report_delay * X[CS][t][a][s][h]; // number of newly reported cases per day
           inc_t[t] += lambda_t_ash * X[S][t][a][s][h] + iota * lambda_t_ash * X[V][t][a][s][h]; // number of newly acquired incidence per day
           time[t] = time[t - 1] + ddt;
+          
+          for (int i = 0; i < 8; ++i) {
+            if (X[i][t][a][s][h] < 0) {
+              std::cout << "negative compartment at t=" << t 
+                        << ", a=" << a 
+                        << ", s=" << s 
+                        << ", h=" << h 
+                        << ", i=" << i 
+                        << ", X[i][t - 1][a][s][h]=" << X[i][t - 1][a][s][h]
+                        << ", lambda=" << lambda_t_ash
+                        << ", summation_t_ash=" << summation_t_ash
+                        << ", psi_t=" << psi_t
+                        << std::endl;
+              throw std::runtime_error("negative compartment forbidden.");        
+            }
+          }
   }}}}
   
   // convert each array to a vector for return

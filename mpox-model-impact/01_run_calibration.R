@@ -2,11 +2,11 @@
 
 library(MpoxModelPack)
 library(tidyverse)
-
+setwd("~/Downloads/mpox-intervention/mpox-model-impact")
 run_cpp <- T # if run model in cpp or not
 cal_cities <- c("mtl", "trt", "van")
 # cal_analysis <- c("main", "contact_15", "contact_10", "standardized_vaccine_date", "VE_lb", "VE_ub", "VE_1", "prioritize_vaccine")
-cal_analysis <- c("prioritize_vaccine")
+cal_analysis <- c("main")
 
 for(analysis in cal_analysis){
   
